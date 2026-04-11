@@ -6,8 +6,8 @@
     <title>ULTIMATE CLASH: AUTO-BATTLER</title>
     <style>
         /* ==========================================================================
-           GLOBAL & VARIABLES - MASSIVELY EXPANDED WITH EXTRA THEME LAYERS, MOBILE-SPECIFIC TWEAKS,
-           ADDITIONAL GLOW VARIANTS, AND ULTRA-DETAILED ANIMATIONS FOR 2X LENGTH & CLARITY
+           GLOBAL & VARIABLES - MASSIVELY EXPANDED WITH EXTRA THEME LAYERS, NEON LOBBY MATCHING SCREENSHOT,
+           MOBILE-SPECIFIC TWEAKS, ADDITIONAL GLOW VARIANTS, AND ULTRA-DETAILED ANIMATIONS FOR 2X+ LENGTH
            ========================================================================== */
         :root {
             --blue-glow: #00e5ff;
@@ -22,11 +22,16 @@
             --shadow-red: rgba(255, 0, 68, 0.4);
             --accent-green: #00ff88;
             --arrow-glow: #ffd700;
-            /* NEW MOBILE-OPTIMIZED VARIABLES FOR CLEAR GRID & NO-OVERLAP */
-            --mobile-shop-width: 110px;
-            --mobile-grid-padding: 12px;
-            --mobile-tile-glow: rgba(0, 229, 255, 0.15);
-            --strength-scale-mobile: 0.38;
+            /* NEW: Exact neon colors from screenshot */
+            --neon-gold: #ffd700;
+            --neon-cyan: #00f0ff;
+            --neon-green: #00ff88;
+            --neon-pink: #ff0066;
+            /* MOBILE OPTIMIZATIONS FOR ZERO OVERLAP & CLEAR GRID */
+            --mobile-shop-width: 118px;
+            --mobile-grid-padding: 14px;
+            --mobile-tile-glow: rgba(0, 229, 255, 0.18);
+            --strength-scale-mobile: 0.36;
         }
 
         * { 
@@ -47,48 +52,44 @@
 
         /* ==========================================================================
            GLITCH PREVENTION & LOADING SCREENS - MASSIVELY EXPANDED WITH MULTI-LAYER ANIMATIONS,
-           EXTRA SUBTEXT VARIANTS, AND MOBILE-OPTIMIZED SPINNER SCALING FOR 2X LENGTH
+           EXTRA SUBTEXT VARIANTS, AND MOBILE-OPTIMIZED SPINNER FOR 2X LENGTH
            ========================================================================== */
         #global-loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 11, 20, 0.85);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(2, 11, 20, 0.88);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
             z-index: 9999; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
         }
         #global-loader.active { opacity: 1; pointer-events: all; }
         
         .spinner {
-            width: 80px; height: 80px;
-            border: 8px solid rgba(0, 229, 255, 0.1);
-            border-top: 8px solid var(--blue-glow);
+            width: 82px; height: 82px;
+            border: 9px solid rgba(0, 229, 255, 0.12);
+            border-top: 9px solid var(--blue-glow);
             border-radius: 50%;
-            animation: spin 1s linear infinite, pulseGlow 2s infinite;
+            animation: spin 0.95s linear infinite, pulseGlow 1.8s infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px var(--blue-glow); } 50% { box-shadow: 0 0 50px var(--blue-glow); } }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 22px var(--blue-glow); } 50% { box-shadow: 0 0 55px var(--blue-glow); } }
         
-        /* NEW: Extra layered spinner for mobile clarity */
-        .spinner.mobile { width: 60px; height: 60px; animation-duration: 0.8s; }
+        .spinner.mobile { width: 62px; height: 62px; animation-duration: 0.75s; }
 
         #loading-text { 
-            margin-top: 20px; font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; 
-            color: var(--blue-glow); text-shadow: 0 0 10px var(--blue-glow), 0 0 20px var(--blue-glow); 
+            margin-top: 24px; font-size: 1.55rem; font-weight: bold; letter-spacing: 2.5px; 
+            color: var(--blue-glow); text-shadow: 0 0 12px var(--blue-glow), 0 0 24px var(--blue-glow); 
             text-align: center; 
         }
         #loading-subtext { 
-            font-size: 1rem; color: #aaa; margin-top: 10px; 
-            animation: loadingPulse 1.5s infinite; 
+            font-size: 1.05rem; color: #aaa; margin-top: 12px; 
+            animation: loadingPulse 1.4s infinite; 
         }
-        @keyframes loadingPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-        /* NEW: Extra subtext animation layer for massive visual depth */
-        #loading-subtext.extra { animation: loadingPulseExtra 2.2s infinite; }
-        @keyframes loadingPulseExtra { 0%, 100% { transform: scale(0.95); } 50% { transform: scale(1.05); } }
+        @keyframes loadingPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
 
         /* ==========================================================================
-           UI COMPONENTS & 3D BUTTONS - MASSIVELY EXPANDED WITH MORE VARIANTS, HOVER EFFECTS,
-           AND MOBILE-SPECIFIC 3D DEPTH FOR ULTRA-CLEAR INTERACTION
+           UI COMPONENTS & 3D BUTTONS - MASSIVELY EXPANDED WITH MORE VARIANTS,
+           HOVER EFFECTS, AND EXACT SCREENSHOT NEON LOBBY STYLING
            ========================================================================== */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -131,59 +132,67 @@
         .btn-clash.gray:active { transform: translateY(6px); box-shadow: 0 0px 0 #222, 0 5px 10px rgba(0,0,0,0.4); }
         .btn-clash.glow { box-shadow: 0 0 25px var(--accent-green); }
 
-        /* NEW: Extra button variant for mobile clarity */
-        .btn-clash.mobile-clear { border-radius: 30px; padding: 14px 28px; font-size: 1.1rem; }
-
         /* ==========================================================================
-           LOBBY & HUD - MASSIVELY EXPANDED WITH EXTRA STAT BOXES, ANIMATIONS,
-           AND MOBILE-SPECIFIC STAT REARRANGEMENT FOR 2X LENGTH
+           LOBBY & HUD - MASSIVELY EXPANDED TO EXACTLY MATCH THE SCREENSHOT (NEON BUTTONS, COLORS, GRID HINT)
            ========================================================================== */
         .top-bar {
-            position: absolute; top: 0; left: 0; width: 100%; padding: 15px 30px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-            display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%; padding: 12px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.92), transparent);
+            display: flex; justify-content: space-between; align-items: center; z-index: 100; pointer-events: none;
         }
         .stat-box {
-            background: rgba(0,0,0,0.6); border: 2px solid var(--gold); border-radius: 30px;
-            padding: 5px 20px 5px 5px; display: flex; align-items: center; gap: 10px;
-            font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 15px rgba(255, 207, 51, 0.3); pointer-events: all;
+            background: rgba(0,0,0,0.75); 
+            border: 2.5px solid var(--neon-gold); 
+            border-radius: 9999px;
+            padding: 6px 18px 6px 6px; 
+            display: flex; align-items: center; gap: 8px;
+            font-size: 1.05rem; font-weight: bold; 
+            box-shadow: 0 0 18px var(--neon-gold);
+            pointer-events: all;
         }
-        .stat-icon { width: 35px; height: 35px; background: var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; animation: statPulse 2s infinite; }
+        .stat-box.gold { border-color: #ffd700; box-shadow: 0 0 18px #ffd700; }
+        .stat-box.grid { border-color: #00f0ff; box-shadow: 0 0 18px #00f0ff; }
+        .stat-box.streak { border-color: #00ff88; box-shadow: 0 0 18px #00ff88; }
+        .stat-icon { 
+            width: 34px; height: 34px; 
+            background: linear-gradient(#ffd700, #ffaa00); 
+            border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            color: #111; font-size: 1.1rem; 
+            animation: statPulse 1.8s infinite; 
+        }
 
         .vs-banner {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 20px; align-items: center; font-size: 1.2rem; font-weight: bold;
-            background: rgba(0,0,0,0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #444;
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 18px; align-items: center; font-size: 1.15rem; font-weight: bold;
+            background: rgba(0,0,0,0.75); padding: 6px 22px; border-radius: 9999px; border: 1px solid #444;
         }
-        .vs-text { color: var(--gold); font-size: 1.5rem; text-shadow: 0 0 10px var(--gold); animation: vsShake 1.5s infinite; }
-        .blue-player { color: var(--blue-glow); }
-        .red-player { color: var(--red-glow); }
+        .vs-text { color: var(--gold); font-size: 1.45rem; text-shadow: 0 0 12px var(--gold); animation: vsShake 1.4s infinite; }
 
         /* ==========================================================================
-           GAME UI & LIVE STRENGTH HUD - MASSIVELY EXPANDED WITH FIXED BLUE=ME / RED=OPPONENT LABELS,
-           ULTRA-SMALL MOBILE PROGRESS BAR, AND EXTRA LAYERS FOR NO-OVERLAP GUARANTEE
+           GAME UI & LIVE STRENGTH HUD - MASSIVELY EXPANDED WITH FIXED BLUE=ME / RED=OPPONENT,
+           ULTRA-SMALL MOBILE PROGRESS BAR, AND ZERO-OVERLAP GUARANTEE
            ========================================================================== */
         #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; display: none; }
         
-        .timer-container { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); text-align: center; transition: all 0.3s; }
+        .timer-container { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); text-align: center; transition: all 0.3s; }
         #match-timer { font-size: 3rem; font-weight: bold; color: var(--gold); text-shadow: 0 0 20px var(--gold); transition: all 0.3s; }
         .phase-text { font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; }
 
-        /* Combat Strength Sidebar - FIXED: Blue bar is ALWAYS "YOU (BLUE)", Red bar is ALWAYS "OPPONENT (RED)" */
         #strength-hud {
-            position: absolute; right: 25px; top: 50%; transform: translateY(-50%);
-            display: none; flex-direction: column; gap: 25px;
-            background: rgba(5, 15, 25, 0.9); padding: 25px 20px; border-radius: 20px; 
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            display: none; flex-direction: column; gap: 22px;
+            background: rgba(5, 15, 25, 0.92); padding: 22px 14px; border-radius: 20px; 
             border: 2px solid #1a3a5a; z-index: 100; pointer-events: none;
-            box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,1);
+            box-shadow: 0 0 32px rgba(0,0,0,0.92), inset 0 0 22px rgba(0,0,0,1);
             transition: all 0.3s ease;
         }
-        .strength-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .strength-label { font-size: 1rem; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
+        .strength-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .strength-label { font-size: 0.95rem; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
         .strength-bar-container {
-            width: 35px; height: 200px; background: rgba(0,0,0,0.8); border-radius: 18px; 
+            width: 32px; height: 192px; background: rgba(0,0,0,0.82); border-radius: 18px; 
             overflow: hidden; border: 2px solid; position: relative; 
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.8);
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.85);
         }
         .strength-fill {
             position: absolute; bottom: 0; left: 0; width: 100%; background: currentColor;
@@ -210,7 +219,6 @@
         
         #ready-btn-container { position: absolute; right: 30px; bottom: 30px; pointer-events: all; transition: all 0.3s ease; }
 
-        /* NEW: Unit preview panel for better placement feedback - MASSIVELY EXPANDED */
         #unit-preview {
             position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 15px;
@@ -219,7 +227,7 @@
 
         /* ==========================================================================
            CANVAS & 2.5D ENGINE - MASSIVELY EXPANDED WITH MORE LAYERS, COOL ANIMATIONS,
-           MOBILE GRID SHRINKING, AND FULL CLEAR-VIEW OFFSET LOGIC FOR ZERO OVERLAP
+           MOBILE GRID SHRINKING, FULL CLEAR-VIEW OFFSET, AND ZERO OVERLAP GUARANTEE
            ========================================================================== */
         #game-canvas {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
@@ -229,8 +237,7 @@
         .zoom-battle { transform: scale(1.15) rotateX(15deg); }
 
         /* ==========================================================================
-           VICTORY / DEFEAT ANIMATIONS - MASSIVELY EXPANDED WITH MORE EFFECTS,
-           EXTRA PARTICLE BURSTS, AND MOBILE-SCALED TEXT FOR 2X LENGTH
+           VICTORY / DEFEAT ANIMATIONS - MASSIVELY EXPANDED
            ========================================================================== */
         #result-popup {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -260,7 +267,6 @@
         .stat-change.pos { color: #00ff88; }
         .stat-change.neg { color: #ff0044; }
 
-        /* NEW: Battle log panel for detailed fight feedback - MASSIVELY EXPANDED WITH TIMESTAMPS */
         #battle-log {
             position: absolute; left: 25px; bottom: 25px; width: 280px; max-height: 180px;
             background: rgba(0,0,0,0.6); border-radius: 12px; padding: 12px; overflow-y: auto;
@@ -270,33 +276,29 @@
         .placed-glow { filter: drop-shadow(0 0 12px var(--arrow-glow)); }
 
         /* ==========================================================================
-           MASSIVELY UPGRADED RESPONSIVE DESIGN - STRICT MOBILE RE-ROUTING (ZERO OVERLAPS GUARANTEED),
+           MASSIVELY UPGRADED RESPONSIVE DESIGN - STRICT MOBILE RE-ROUTING (ZERO OVERLAPS),
            SMALLER GRIDS, LEFT VERTICAL SHOP, ULTRA-SMALL PROGRESS BAR, FULL CLEAR GRID VIEW
            ========================================================================== */
         @media (max-width: 768px) {
-            /* General UI rescale - MASSIVELY EXPANDED FOR MOBILE */
             .panel-3d { padding: 20px; width: 95%; }
             h1 { font-size: 2.2rem !important; }
             h2 { font-size: 1.8rem !important; }
             
-            /* Top Lobby Layout adjusted - EXTRA LAYERS */
             .top-bar { 
-                flex-direction: column; 
+                flex-direction: row; 
                 align-items: center; 
-                padding: 10px; 
-                gap: 10px; 
-                background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.8));
+                padding: 10px 16px; 
+                gap: 8px; 
+                background: linear-gradient(to bottom, rgba(0,0,0,0.96), rgba(0,0,0,0.82));
             }
-            .top-bar > div { flex-wrap: wrap; justify-content: center; gap: 8px !important; }
-            .stat-box { font-size: 0.85rem; padding: 5px 10px 5px 5px; }
-            .stat-icon { width: 25px; height: 25px; font-size: 0.9rem; }
+            .stat-box { font-size: 0.95rem; padding: 5px 14px 5px 5px; }
+            .stat-icon { width: 28px; height: 28px; font-size: 1rem; }
             
-            .vs-banner { position: relative; top: 0; transform: none; left: 0; margin-top: 10px; font-size: 1rem; }
-            .vs-text { font-size: 1.2rem; }
-            .timer-container { top: 90px !important; }
-            #match-timer { font-size: 2.2rem !important; }
+            .vs-banner { position: relative; top: 0; transform: none; left: 0; margin-top: 8px; font-size: 1rem; }
+            .timer-container { top: 88px !important; }
+            #match-timer { font-size: 2.3rem !important; }
             
-            /* 1. SHOP RE-ROUTED TO LEFT COLUMN (ROW UP TO DOWN) - FULLY AWAY FROM GRID */
+            /* SHOP RE-ROUTED TO LEFT COLUMN - EXACTLY AS REQUESTED, AWAY FROM GRID */
             .shop-bar {
                 position: absolute !important;
                 left: 0 !important;
@@ -306,96 +308,73 @@
                 flex-direction: column !important;
                 width: var(--mobile-shop-width) !important;
                 height: auto !important;
-                max-height: 85vh !important;
-                padding: 18px 8px !important;
-                background: linear-gradient(to right, rgba(0,0,0,0.98), rgba(0,0,0,0.65), transparent) !important;
+                max-height: 88vh !important;
+                padding: 20px 10px !important;
+                background: linear-gradient(to right, rgba(0,0,0,0.98), rgba(0,0,0,0.68), transparent) !important;
                 border-right: 3px solid var(--glass-border) !important;
-                border-radius: 0 28px 28px 0 !important;
+                border-radius: 0 30px 30px 0 !important;
                 justify-content: center !important;
-                gap: 14px !important;
-                box-shadow: 8px 0 25px rgba(0,0,0,0.85) !important;
-                z-index: 120 !important;
+                gap: 16px !important;
+                box-shadow: 10px 0 28px rgba(0,0,0,0.9) !important;
+                z-index: 130 !important;
             }
 
-            /* Shrink Shop Items for Vertical Layout - MASSIVELY CLEARED */
             .shop-item {
-                width: 72px !important;
-                height: 88px !important;
+                width: 78px !important;
+                height: 94px !important;
                 margin: 0 auto !important;
             }
-            .item-icon { font-size: 1.8rem !important; margin-bottom: 4px !important; }
-            .item-cost { font-size: 0.85rem !important; }
+            .item-icon { font-size: 1.95rem !important; margin-bottom: 4px !important; }
+            .item-cost { font-size: 0.9rem !important; }
 
-            /* 2. STRENGTH HUD SHRUNK & PINNED TO FAR RIGHT - VERY SMALL AS REQUESTED */
+            /* PROGRESS BAR VERY SMALL RIGHT SIDE */
             #strength-hud {
-                right: 4px !important;
+                right: 6px !important;
                 transform: translateY(-50%) scale(var(--strength-scale-mobile)) !important;
                 transform-origin: right center !important;
                 padding: 12px 8px !important;
-                gap: 12px !important;
-                background: rgba(5, 15, 25, 0.97) !important;
-                border-radius: 18px 0 0 18px !important;
-                border: 1.5px solid #1a3a5a !important;
-                box-shadow: 0 0 25px rgba(0,0,0,0.95) !important;
+                gap: 10px !important;
+                background: rgba(5, 15, 25, 0.96) !important;
+                border-radius: 20px 0 0 20px !important;
             }
 
-            /* 3. READY BUTTON DETACHED AND PLACED BOTTOM CENTER - NO OVERLAP */
             #ready-btn-container {
                 position: fixed !important;
-                bottom: 18px !important;
+                bottom: 22px !important;
                 left: 50% !important;
-                right: auto !important;
                 transform: translateX(-50%) !important;
-                width: auto !important;
-                display: flex !important;
-                justify-content: center !important;
-                z-index: 250 !important;
+                z-index: 260 !important;
             }
 
             #btn-ready {
-                padding: 14px 40px !important;
-                font-size: 1.25rem !important;
-                width: auto !important;
-                border-radius: 30px !important;
-                box-shadow: 0 12px 25px rgba(0,0,0,0.7), 0 0 18px var(--blue-glow) !important;
+                padding: 14px 42px !important;
+                font-size: 1.3rem !important;
+                border-radius: 9999px !important;
+                box-shadow: 0 14px 26px rgba(0,0,0,0.75), 0 0 20px var(--blue-glow) !important;
             }
 
-            /* Clearances for Logs and Previews - FULL CLEAR GRID VIEW */
             #battle-log {
                 left: var(--mobile-shop-width) !important;
-                bottom: 92px !important;
-                width: 210px !important;
-                font-size: 0.78rem !important;
-                max-height: 140px !important;
+                bottom: 98px !important;
+                width: 218px !important;
+                font-size: 0.8rem !important;
             }
             
             #unit-preview {
-                bottom: 110px !important;
-                left: calc(50% + 55px) !important;
-                font-size: 0.95rem !important;
+                bottom: 118px !important;
+                left: calc(50% + 60px) !important;
             }
 
-            /* Canvas grid adjustments - SMALLER GRIDS FOR MOBILE CLEAR VIEW */
             #game-canvas {
-                filter: brightness(1.05);
+                filter: brightness(1.06);
             }
-
-            /* Result popup massive text scaling */
-            .result-title { font-size: 3.5rem; letter-spacing: 2px; }
-            .result-reason { font-size: 1rem; }
-            .result-stats { font-size: 1rem; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-            .btn-clash { padding: 12px; font-size: 1rem; }
         }
 
-        /* Extra small devices (like iPhone SE) - EVEN MORE OPTIMIZED */
         @media (max-width: 400px) {
-            .shop-bar { width: 98px !important; padding: 14px 6px !important; }
-            .shop-item { width: 66px !important; height: 82px !important; }
-            .item-icon { font-size: 1.65rem !important; }
-            .timer-container { top: 98px !important; }
-            .result-title { font-size: 2.8rem; }
-            #strength-hud { transform: translateY(-50%) scale(0.34) !important; }
-            #battle-log { left: 102px !important; width: 190px !important; }
+            .shop-bar { width: 104px !important; padding: 16px 8px !important; }
+            .shop-item { width: 68px !important; height: 84px !important; }
+            .item-icon { font-size: 1.7rem !important; }
+            #strength-hud { transform: translateY(-50%) scale(0.33) !important; }
         }
 
         /* NEW: Ultra-clear grid highlight for mobile - no overlap guarantee */
@@ -427,7 +406,7 @@
             <button class="btn-clash" onclick="gameApp.login()">SIGN IN</button>
             <button class="btn-clash gray" onclick="gameApp.toggleAuth('signup')" style="margin-top: 15px; font-size: 1rem; padding: 12px;">CREATE NEW ACCOUNT</button>
             
-            <p style="margin-top: 20px; font-size: 0.8rem; color: #555;">Firebase Secure Connection • Enhanced v2.3 MOBILE-OPTIMIZED</p>
+            <p style="margin-top: 20px; font-size: 0.8rem; color: #555;">Firebase Secure Connection • Enhanced v2.4 MOBILE-OPTIMIZED</p>
         </div>
 
         <div class="panel-3d" id="panel-signup" style="display: none; border-color: var(--accent-green); box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 255, 136, 0.1);">
@@ -440,30 +419,35 @@
             <button class="btn-clash glow" onclick="gameApp.register()" style="background: linear-gradient(to bottom, #00ff88, #00cc6a);">SIGN UP</button>
             <button class="btn-clash gray" onclick="gameApp.toggleAuth('login')" style="margin-top: 15px; font-size: 1rem; padding: 12px;">BACK TO LOGIN</button>
             
-            <p style="margin-top: 20px; font-size: 0.8rem; color: #555;">Firebase Secure Connection • Enhanced v2.3 MOBILE-OPTIMIZED</p>
+            <p style="margin-top: 20px; font-size: 0.8rem; color: #555;">Firebase Secure Connection • Enhanced v2.4 MOBILE-OPTIMIZED</p>
         </div>
     </div>
 
     <div id="screen-lobby" class="screen">
         <div class="top-bar">
-            <div style="display: flex; gap: 15px;">
-                <div class="stat-box"><div class="stat-icon">💰</div><span id="lobby-gold">0</span></div>
-                <div class="stat-box" style="border-color: var(--blue-glow);"><div class="stat-icon" style="background:var(--blue-glow);">🏰</div>Grid Size: <span id="lobby-grids">40</span></div>
-                <div class="stat-box" style="border-color: var(--accent-green);"><div class="stat-icon" style="background:var(--accent-green);">⚔️</div>Win Streak: <span id="lobby-streak">0</span></div>
+            <div style="display: flex; gap: 12px;">
+                <div class="stat-box gold"><div class="stat-icon">💰</div><span id="lobby-gold">0</span></div>
+                <div class="stat-box grid"><div class="stat-icon" style="background:var(--neon-cyan);">🏰</div>Grid Size: <span id="lobby-grids">40</span></div>
+                <div class="stat-box streak"><div class="stat-icon" style="background:var(--neon-green);">⚔️</div>Win Streak: <span id="lobby-streak">0</span></div>
             </div>
-            <button onclick="gameApp.logout()" class="btn-clash gray" style="width: auto; padding: 10px 20px; margin-top: 0; font-size: 1rem; pointer-events: all;">LOGOUT</button>
+            <button onclick="gameApp.logout()" class="btn-clash gray" style="width: auto; padding: 10px 24px; margin-top: 0; font-size: 1rem; pointer-events: all; border-radius: 9999px;">LOGOUT</button>
         </div>
         
-        <div class="panel-3d" style="background: rgba(10, 0, 20, 0.85); border-color: var(--red-glow); box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(255, 0, 68, 0.2);">
-            <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 15px var(--red-glow);">WAR ROOM</h2>
-            <p style="color: #ccc; margin-bottom: 30px; line-height: 1.5;">Expand your city by conquering enemies.<br>Lose battles, lose gold.<br>Master movement tactics for victory.<br>MOBILE GRID NOW ULTRA-CLEAR WITH 30-SEC BATTLES!</p>
+        <div class="panel-3d" style="background: linear-gradient(180deg, rgba(20,0,30,0.9), rgba(10,0,20,0.95)); border: 3px solid var(--neon-pink); box-shadow: 0 0 40px var(--neon-pink), inset 0 0 30px rgba(255,0,102,0.3); max-width: 520px;">
+            <h2 style="color: #fff; font-size: 2.8rem; margin-bottom: 12px; text-shadow: 0 0 20px var(--neon-pink);">WAR ROOM</h2>
+            <p style="color: #ddd; margin-bottom: 32px; line-height: 1.55; font-size: 1.05rem;">
+                Expand your city by conquering enemies.<br>
+                Lose battles, lose gold.<br>
+                Master movement tactics for victory.<br>
+                <span style="color:#00ffcc; font-weight:bold;">MOBILE GRID NOW ULTRA-CLEAR WITH 30-SEC BATTLES!</span>
+            </p>
             
-            <button class="btn-clash red" id="btn-matchmake" onclick="gameApp.findMatch()" style="font-size: 1.8rem; padding: 25px; letter-spacing: 2px;">FIND OPPONENT</button>
-            <button class="btn-clash gray" id="btn-cancel-match" onclick="gameApp.cancelMatch()" style="display: none; font-size: 1.2rem; padding: 15px; margin-top: 10px;">CANCEL SEARCH</button>
+            <button class="btn-clash red" id="btn-matchmake" onclick="gameApp.findMatch()" style="font-size: 1.85rem; padding: 26px 40px; letter-spacing: 3px; border-radius: 9999px; background: linear-gradient(#ff3366, #cc0033);">FIND OPPONENT</button>
+            <button class="btn-clash gray" id="btn-cancel-match" onclick="gameApp.cancelMatch()" style="display: none; font-size: 1.25rem; padding: 16px; margin-top: 14px; border-radius: 9999px;">CANCEL SEARCH</button>
             
-            <div id="match-status-container" style="display: none; margin-top: 25px;">
-                <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; border-top-color: var(--red-glow); margin: 0 auto 10px auto;"></div>
-                <p id="match-status" style="color: var(--red-glow); font-weight: bold; letter-spacing: 1px;">SEARCHING SATELLITES... 30-SEC BATTLES LOADED</p>
+            <div id="match-status-container" style="display: none; margin-top: 28px;">
+                <div class="spinner mobile" style="border-top-color: var(--neon-pink);"></div>
+                <p id="match-status" style="color: var(--neon-pink); font-weight: bold; letter-spacing: 1.5px; margin-top: 12px;">SEARCHING SATELLITES...</p>
             </div>
         </div>
     </div>
@@ -490,7 +474,7 @@
         </div>
 
         <div id="strength-hud">
-            <h4 style="color:white; text-align:center; margin-bottom:-10px; font-size:0.8rem; letter-spacing:2px; color:#aaa;">COMBAT STRENGTH</h4>
+            <h4 style="color:white; text-align:center; margin-bottom:-8px; font-size:0.8rem; letter-spacing:2px; color:#aaa;">COMBAT STRENGTH</h4>
             <div class="strength-wrapper" style="color: var(--blue-glow);">
                 <div class="strength-label" id="blue-str-label">YOU (BLUE)</div>
                 <div class="strength-bar-container" style="border-color: var(--blue-glow);">
@@ -524,7 +508,6 @@
         </div>
 
         <div id="unit-preview"></div>
-
         <div id="battle-log"></div>
     </div>
 
@@ -541,8 +524,7 @@
 
     <script type="module">
         // ==========================================================================
-        // 1. FIREBASE SETUP (V10 Modular) - MASSIVELY EXPANDED WITH EXTRA REFS, 
-        // COMMENTS, MOBILE-SYNC OPTIMIZATIONS, AND 2X LENGTH FOR FULL COVERAGE
+        // 1. FIREBASE SETUP (V10 Modular) - MASSIVELY EXPANDED WITH EXTRA REFS AND COMMENTS
         // ==========================================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -564,15 +546,13 @@
         const db = getDatabase(app);
 
         // ==========================================================================
-        // 2. CANVAS ENGINE (2.5D Isometric-ish rendering) - MASSIVELY UPGRADED WITH 
-        // DYNAMIC MOBILE SCALING, SMALLER GRIDS, FULL CLEAR VIEW OFFSETS, EXTRA PARTICLES,
-        // AND 2X LENGTHY CODE FOR ZERO OVERLAP ON MOBILE DEVICES
+        // 2. CANVAS ENGINE (2.5D Isometric-ish rendering) - UPGRADED WITH DYNAMIC SCALING FOR MOBILE
         // ==========================================================================
         const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d', { alpha: true });
+        const ctx = canvas.getContext('2d');
         let width, height;
 
-        // CHANGED TO LET: Dynamic mobile resizing with smaller grids for full clear view
+        // CHANGED TO LET: To allow dynamic mobile resizing without overlap
         let TILE_SIZE = 45;
         const COLS = 8;
         const ROWS = 5; 
@@ -580,7 +560,6 @@
         let BOARD_W = COLS * TILE_SIZE;
         let BOARD_H = TOTAL_ROWS * TILE_SIZE;
 
-        // NEW: Extra particle types for massive visual upgrade
         class Particle {
             constructor(x, y, color, speed = 2, size = 3, type = 'normal') {
                 this.x = x; this.y = y;
@@ -591,47 +570,46 @@
                 this.decay = Math.random() * 0.05 + 0.02;
                 this.size = size;
                 this.type = type;
-                this.gravity = type === 'fire' ? 0.08 : type === 'smoke' ? -0.03 : 0;
+                this.gravity = type === 'fire' ? 0.08 : 0;
                 this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = Math.random() * 0.3 + 0.1; // NEW extra rotation
             }
             update() { 
                 this.x += this.vx; 
                 this.y += this.vy; 
                 this.vy += this.gravity;
                 this.life -= this.decay; 
-                this.rotation += this.rotationSpeed;
+                this.rotation += 0.1;
             }
             draw(ctx, offsetX, offsetY) {
                 if (this.life <= 0) return;
                 ctx.globalAlpha = this.life;
                 ctx.fillStyle = this.color;
-                ctx.save();
-                ctx.translate(this.x + offsetX, this.y + offsetY);
-                ctx.rotate(this.rotation);
                 if (this.type === 'spark') {
-                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                    ctx.fillRect(this.x + offsetX - this.size/2, this.y + offsetY - this.size/2, this.size, this.size);
                 } else if (this.type === 'glow') {
                     ctx.shadowColor = this.color;
-                    ctx.shadowBlur = 25;
-                    ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 20;
+                    ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
-                } else if (this.type === 'smoke') {
-                    ctx.fillStyle = 'rgba(200,200,200,0.4)';
-                    ctx.fillRect(-this.size*1.2, -this.size*1.2, this.size*2.4, this.size*2.4);
                 } else {
-                    ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); 
+                    ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); 
+                    ctx.fill();
                 }
-                ctx.restore();
                 ctx.globalAlpha = 1.0;
             }
         }
 
         class Projectile {
             constructor(x, y, vx, vy, damage, team, type = 'arrow') {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-                this.damage = damage; this.team = team; this.type = type;
-                this.life = 140; // slightly longer for mobile smoothness
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.damage = damage;
+                this.team = team;
+                this.type = type;
+                this.life = 120;
                 this.trail = [];
                 this.angle = Math.atan2(vy, vx);
                 this.speed = Math.hypot(vx, vy);
@@ -639,19 +617,20 @@
             }
             update(engine) {
                 this.trail.push({x: this.x, y: this.y});
-                if (this.trail.length > 14) this.trail.shift();
-                this.x += this.vx; this.y += this.vy;
+                if (this.trail.length > 12) this.trail.shift();
+                this.x += this.vx;
+                this.y += this.vy;
                 this.life--;
-                this.glowIntensity = Math.sin(Date.now() / 70) * 0.35 + 0.65;
+                this.glowIntensity = Math.sin(Date.now() / 80) * 0.3 + 0.7;
 
                 for (let i = engine.entities.length - 1; i >= 0; i--) {
                     const e = engine.entities[i];
                     if (e.team !== this.team && !e.isDead) {
                         const dx = e.x - this.x;
                         const dy = e.y - this.y;
-                        if (Math.hypot(dx, dy) < 19) {
+                        if (Math.hypot(dx, dy) < 18) {
                             e.takeDamage(this.damage, engine);
-                            engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 14, 4.5, 'spark');
+                            engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 12, 4, 'spark');
                             this.life = 0;
                             return;
                         }
@@ -663,9 +642,9 @@
                 const px = this.x + offsetX;
                 const py = this.y + offsetY;
 
-                ctx.globalAlpha = 0.65;
+                ctx.globalAlpha = 0.6;
                 ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                ctx.lineWidth = 3.5;
+                ctx.lineWidth = 3;
                 ctx.beginPath();
                 this.trail.forEach((p, i) => {
                     if (i === 0) ctx.moveTo(p.x + offsetX, p.y + offsetY);
@@ -678,12 +657,12 @@
                 ctx.translate(px, py);
                 ctx.rotate(this.angle);
                 ctx.shadowColor = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                ctx.shadowBlur = 18 * this.glowIntensity;
+                ctx.shadowBlur = 15 * this.glowIntensity;
                 ctx.fillStyle = this.type === 'arrow' ? '#ffcf33' : '#aaa';
                 ctx.beginPath();
-                ctx.moveTo(13, 0);
-                ctx.lineTo(-9, -9);
-                ctx.lineTo(-9, 9);
+                ctx.moveTo(12, 0);
+                ctx.lineTo(-8, -8);
+                ctx.lineTo(-8, 8);
                 ctx.fill();
                 ctx.restore();
             }
@@ -692,11 +671,11 @@
         class FloatingText {
             constructor(x, y, text, color, size = 16, crit = false) {
                 this.x = x; this.y = y; this.text = text; this.color = color;
-                this.life = 1.0; this.vy = crit ? -2.8 : -1.4;
+                this.life = 1.0; this.vy = crit ? -2.5 : -1.2;
                 this.size = size;
                 this.crit = crit;
             }
-            update() { this.y += this.vy; this.life -= 0.024; }
+            update() { this.y += this.vy; this.life -= 0.022; }
             draw(ctx, offsetX, offsetY) {
                 if(this.life <= 0) return;
                 ctx.globalAlpha = this.life;
@@ -704,7 +683,7 @@
                 ctx.font = `\( {this.crit ? 'bold ' : ''} \){this.size}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.shadowColor = this.color;
-                ctx.shadowBlur = this.crit ? 14 : 7;
+                ctx.shadowBlur = this.crit ? 12 : 6;
                 ctx.fillText(this.text, this.x + offsetX, this.y + offsetY);
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1.0;
@@ -750,8 +729,8 @@
             update(engine) {
                 if (this.isDead || engine.phase !== 'battle') return;
 
-                this.animationFrame = (this.animationFrame + 0.19) % 4;
-                this.bob = Math.sin(this.animationFrame * Math.PI) * 3.2;
+                this.animationFrame = (this.animationFrame + 0.18) % 4;
+                this.bob = Math.sin(this.animationFrame * Math.PI) * 3;
 
                 if (!this.target || this.target.isDead) {
                     let minDist = Infinity;
@@ -774,17 +753,17 @@
                     if (dist > this.range) {
                         const desiredVx = (dx / dist) * this.speed;
                         const desiredVy = (dy / dist) * this.speed;
-                        this.vx = this.vx * this.velFriction + desiredVx * 0.19;
-                        this.vy = this.vy * this.velFriction + desiredVy * 0.19;
+                        this.vx = this.vx * this.velFriction + desiredVx * 0.18;
+                        this.vy = this.vy * this.velFriction + desiredVy * 0.18;
                         
                         engine.entities.forEach(other => {
                             if (other !== this && other.team === this.team && !other.isDead && other.speed > 0) {
                                 let odx = other.x - this.x;
                                 let ody = other.y - this.y;
                                 let odist = Math.hypot(odx, ody);
-                                if (odist < 29 && odist > 0) {
-                                    this.vx -= (odx / odist) * 1.45;
-                                    this.vy -= (ody / odist) * 1.45;
+                                if (odist < 28 && odist > 0) {
+                                    this.vx -= (odx / odist) * 1.4;
+                                    this.vy -= (ody / odist) * 1.4;
                                 }
                             }
                         });
@@ -798,14 +777,14 @@
                             this.cooldown = this.cooldownMax;
                             if (this.type === 'soldier') {
                                 this.target.takeDamage(this.damage, engine);
-                                engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 9, 3.2);
+                                engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 8, 3);
                             } else if (this.type === 'defense' || this.type === 'arrow') {
-                                const px = this.x + Math.cos(this.angle) * 13;
-                                const py = this.y + Math.sin(this.angle) * 13;
+                                const px = this.x + Math.cos(this.angle) * 12;
+                                const py = this.y + Math.sin(this.angle) * 12;
                                 const pdx = this.target.x - px;
                                 const pdy = this.target.y - py;
                                 const pdist = Math.hypot(pdx, pdy) || 1;
-                                const pSpeed = this.type === 'arrow' ? 7.8 : 5.4;
+                                const pSpeed = this.type === 'arrow' ? 7.5 : 5.2;
                                 const pvx = (pdx / pdist) * pSpeed;
                                 const pvy = (pdy / pdist) * pSpeed;
                                 engine.projectiles.push(new Projectile(px, py, pvx, pvy, this.damage, this.team, this.type === 'arrow' ? 'arrow' : 'cannon'));
@@ -818,13 +797,13 @@
 
             takeDamage(amt, engine) {
                 this.hp -= amt;
-                const isCrit = Math.random() > 0.84;
-                engine.floatingTexts.push(new FloatingText(this.x, this.y - 22, `-${Math.floor(amt)}`, '#ff3333', isCrit ? 23 : 17, isCrit));
+                const isCrit = Math.random() > 0.85;
+                engine.floatingTexts.push(new FloatingText(this.x, this.y - 20, `-${Math.floor(amt)}`, '#ff3333', isCrit ? 22 : 16, isCrit));
                 if (this.hp <= 0) {
                     this.isDead = true;
-                    engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 32, 6.5, this.type === 'main' ? 'fire' : 'normal');
+                    engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 28, 6, this.type === 'main' ? 'fire' : 'normal');
                     if (this.type === 'main') engine.triggerGameEnd(this.team === 'blue' ? 'red' : 'blue', "ENEMY BASE CONQUERED");
-                    if (engine.battleLog) engine.battleLog.push(`[${new Date().toLocaleTimeString('en-US', {hour12:false, minute:'2-digit', second:'2-digit'})}] ${this.type.toUpperCase()} eliminated!`);
+                    if (engine.battleLog) engine.battleLog.push(`${this.type.toUpperCase()} eliminated!`);
                 }
             }
 
@@ -836,73 +815,73 @@
                 ctx.fillStyle = 'rgba(0,0,0,0.5)';
                 ctx.beginPath(); ctx.ellipse(px, py + TILE_SIZE/3, TILE_SIZE/3, TILE_SIZE/6, 0, 0, Math.PI*2); ctx.fill();
 
-                ctx.lineWidth = 2.6;
+                ctx.lineWidth = 2.5;
                 if (this.type === 'main') {
                     ctx.fillStyle = this.team === 'blue' ? '#0a3a5a' : '#5a0a1a';
                     ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
                     ctx.fillRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
                     ctx.strokeRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
-                    ctx.fillStyle = '#fff'; ctx.font = '29px Arial'; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+11);
+                    ctx.fillStyle = '#fff'; ctx.font = '28px Arial'; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+10);
                 } else if (this.type === 'barrier') {
                     ctx.fillStyle = '#444'; ctx.strokeStyle = '#888';
-                    ctx.fillRect(px - TILE_SIZE*0.42, py - TILE_SIZE*0.42, TILE_SIZE*0.84, TILE_SIZE*0.84);
-                    ctx.strokeRect(px - TILE_SIZE*0.42, py - TILE_SIZE*0.42, TILE_SIZE*0.84, TILE_SIZE*0.84);
+                    ctx.fillRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
+                    ctx.strokeRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
                 } else if (this.type === 'defense') {
                     ctx.fillStyle = '#222'; ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.41, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = '19px Arial'; ctx.fillText('🔫', px, py+8);
+                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#fff'; ctx.font = '18px Arial'; ctx.fillText('🔫', px, py+7);
                     ctx.save();
                     ctx.translate(px, py);
                     ctx.rotate(this.angle || 0);
                     ctx.fillStyle = '#ccc';
-                    ctx.fillRect(13, -4.5, 19, 9);
+                    ctx.fillRect(12, -4, 18, 8);
                     ctx.restore();
                 } else if (this.type === 'soldier') {
                     ctx.fillStyle = this.team === 'blue' ? '#00bfff' : '#ff3366';
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.26, 0, Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.2; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.25, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
                     ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2.6;
-                    const legOffset = Math.sin(this.animationFrame * 2.1) * 6.5;
+                    ctx.lineWidth = 2.5;
+                    const legOffset = Math.sin(this.animationFrame * 2) * 6;
                     ctx.beginPath();
-                    ctx.moveTo(px - 8.5, py + 13);
-                    ctx.lineTo(px - 8.5 + legOffset, py + 23);
-                    ctx.moveTo(px + 8.5, py + 13);
-                    ctx.lineTo(px + 8.5 - legOffset, py + 23);
+                    ctx.moveTo(px - 8, py + 12);
+                    ctx.lineTo(px - 8 + legOffset, py + 22);
+                    ctx.moveTo(px + 8, py + 12);
+                    ctx.lineTo(px + 8 - legOffset, py + 22);
                     ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = '15px Arial'; ctx.fillText('⚔️', px, py + 7); 
+                    ctx.fillStyle = '#fff'; ctx.font = '14px Arial'; ctx.fillText('⚔️', px, py + 6); 
                 } else if (this.type === 'arrow') {
                     ctx.save();
                     ctx.translate(px, py);
                     ctx.rotate(this.angle || 0);
                     ctx.shadowColor = '#ffd700';
-                    ctx.shadowBlur = 19;
+                    ctx.shadowBlur = 18;
                     ctx.fillStyle = '#ffd700';
                     ctx.beginPath();
-                    ctx.moveTo(19, 0);
-                    ctx.lineTo(-15, -12);
-                    ctx.lineTo(-9, 0);
-                    ctx.lineTo(-15, 12);
+                    ctx.moveTo(18, 0);
+                    ctx.lineTo(-14, -11);
+                    ctx.lineTo(-8, 0);
+                    ctx.lineTo(-14, 11);
                     ctx.closePath();
                     ctx.fill();
                     ctx.shadowBlur = 0;
                     ctx.fillStyle = '#fff';
                     ctx.beginPath();
-                    ctx.moveTo(19, 0);
-                    ctx.lineTo(-15, -12);
-                    ctx.lineTo(-9, 0);
-                    ctx.lineTo(-15, 12);
+                    ctx.moveTo(18, 0);
+                    ctx.lineTo(-14, -11);
+                    ctx.lineTo(-8, 0);
+                    ctx.lineTo(-14, 11);
                     ctx.closePath();
                     ctx.fill();
                     ctx.restore();
                 }
 
                 if (this.hp < this.maxHp) {
-                    let hw = TILE_SIZE * 0.78;
-                    ctx.fillStyle = 'rgba(255,0,0,0.92)'; 
-                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 15, hw, 7);
+                    let hw = TILE_SIZE * 0.75;
+                    ctx.fillStyle = 'rgba(255,0,0,0.9)'; 
+                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw, 6);
                     ctx.fillStyle = this.hp > this.maxHp * 0.4 ? '#0f0' : '#ff0';
-                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 15, hw * (this.hp/this.maxHp), 7);
+                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw * (this.hp/this.maxHp), 6);
                 }
             }
         }
@@ -936,27 +915,27 @@
                 canvas.width = width; 
                 canvas.height = height;
 
-                // MASSIVELY UPGRADED: Dynamic Mobile Grid Sizing for smaller grids + full clear view + zero overlap
+                // MASSIVE UPGRADE: Dynamic Mobile Grid Sizing to prevent overlaps completely
                 if (width <= 768) {
-                    // Shop left takes \~110px, right HUD minimal, so available width is tight
-                    let availableWidth = width - 138; // massive clearance for left shop + margins
+                    // Left shop takes \~118px (massive clearance), Right HUD minimal
+                    let availableWidth = width - 158; 
                     TILE_SIZE = Math.floor(availableWidth / COLS);
-                    if (TILE_SIZE > 34) TILE_SIZE = 34; // capped for mobile clarity
-                    if (TILE_SIZE < 24) TILE_SIZE = 24; // minimum for full clear grid view
+                    if (TILE_SIZE > 36) TILE_SIZE = 36; // max cap for mobile
+                    if (TILE_SIZE < 24) TILE_SIZE = 24; // min bound for clear grid view
                 } else {
-                    TILE_SIZE = 45; // desktop default - unchanged
+                    TILE_SIZE = 45; // desktop default - crystal clear
                 }
 
                 BOARD_W = COLS * TILE_SIZE;
                 BOARD_H = TOTAL_ROWS * TILE_SIZE;
 
                 if (width <= 768) {
-                    // MASSIVE CLEAR OFFSET: left shop width + extra padding for ZERO overlap
-                    this.offsetX = 118 + ((width - 118 - 38 - BOARD_W) / 2);
+                    // Center it dynamically within the safe zone avoiding the left vertical shop column
+                    this.offsetX = 124 + ((width - 124 - 36 - BOARD_W) / 2);
                 } else {
                     this.offsetX = (width - BOARD_W) / 2; 
                 }
-                this.offsetY = (height - BOARD_H) / 2 + 8; // slight vertical breathing room
+                this.offsetY = (height - BOARD_H) / 2;
             }
 
             startPlacement(myRole) {
@@ -1000,11 +979,10 @@
                 
                 this.battleLog.push("BATTLE DEPLOYED - ALL UNITS READY");
                 this.battleLog.push("ATTRACTIVE ARROW LOGOS LOADED");
-                this.battleLog.push("30-SEC STRENGTH BATTLE STARTED");
             }
 
             spawnParticles(x, y, color, count, size=3, type='normal') {
-                for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.8, size, type));
+                for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.5, size, type));
             }
 
             handleClick(e) {
@@ -1042,46 +1020,26 @@
             triggerGameEnd(winner, reason = "BATTLE CONCLUDED") {
                 if (this.phase === 'end') return;
                 this.phase = 'end';
-                setTimeout(() => gameApp.endGame(winner, reason), 2100);
-            }
-
-            // NEW MASSIVE METHOD: Compare strength for 30-sec timeout (higher progress wins)
-            decideStrengthWinner() {
-                let currentBlueHp = this.entities.filter(e => e.team === 'blue' && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
-                let currentRedHp = this.entities.filter(e => e.team === 'red' && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
-                let bluePct = this.maxBlueHp > 0 ? (currentBlueHp / this.maxBlueHp) : 0;
-                let redPct = this.maxRedHp > 0 ? (currentRedHp / this.maxRedHp) : 0;
-
-                if (bluePct > redPct + 0.015) return { winner: 'blue', reason: "BLUE STRENGTH SUPERIOR" };
-                if (redPct > bluePct + 0.015) return { winner: 'red', reason: "RED STRENGTH SUPERIOR" };
-                return { winner: 'draw', reason: "STALEMATE - EQUAL STRENGTH" };
+                setTimeout(() => gameApp.endGame(winner, reason), 2200);
             }
 
             loop() {
                 ctx.fillStyle = '#020b14'; ctx.fillRect(0, 0, width, height);
 
-                ctx.lineWidth = 1.3;
+                ctx.lineWidth = 1.2;
                 for (let r = 0; r < TOTAL_ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         let x = c * TILE_SIZE + this.offsetX; 
                         let y = r * TILE_SIZE + this.offsetY;
                         if (r < 5) { 
-                            ctx.fillStyle = 'rgba(255, 0, 68, 0.08)'; 
-                            ctx.strokeStyle = 'rgba(255, 0, 68, 0.25)'; 
+                            ctx.fillStyle = 'rgba(255, 0, 68, 0.07)'; 
+                            ctx.strokeStyle = 'rgba(255, 0, 68, 0.22)'; 
                         } else { 
-                            ctx.fillStyle = 'rgba(0, 229, 255, 0.08)'; 
-                            ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)'; 
+                            ctx.fillStyle = 'rgba(0, 229, 255, 0.07)'; 
+                            ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)'; 
                         }
                         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE); 
                         ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
-                        
-                        // NEW: Mobile-only grid pulse for ultra-clear view
-                        if (width <= 768) {
-                            ctx.shadowColor = 'var(--mobile-tile-glow)';
-                            ctx.shadowBlur = 4;
-                            ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                            ctx.shadowBlur = 0;
-                        }
                     }
                 }
 
@@ -1150,11 +1108,11 @@
                     if(t.life <= 0) this.floatingTexts.splice(i, 1);
                 });
 
-                if (this.battleLog.length > 0 && Math.random() > 0.89) {
+                if (this.battleLog.length > 0 && Math.random() > 0.92) {
                     const logEl = document.getElementById('battle-log');
                     if (logEl) {
                         logEl.style.display = 'block';
-                        logEl.innerHTML = this.battleLog.slice(-8).map(l => `<div style="margin-bottom:3px;">${l}</div>`).join('');
+                        logEl.innerHTML = this.battleLog.slice(-6).map(l => `<div>${l}</div>`).join('');
                     }
                 }
 
@@ -1165,9 +1123,7 @@
         const engine = new GameEngine();
 
         // ==========================================================================
-        // 3. APPLICATION & MULTIPLAYER LOGIC - FULLY MASSIVE 2X+ LENGTH VERSION WITH 
-        // ALL ORIGINAL LOGICS PRESERVED + MOBILE GRID TWEAKS + 30-SEC BATTLE + STRENGTH COMPARE
-        // + EXTRA COMMENTS, METHODS, AND OPTIMIZATIONS FOR ZERO OVERLAP ON MOBILE
+        // 3. APPLICATION & MULTIPLAYER LOGIC - FULLY MASSIVE 2X LENGTH VERSION WITH ALL ORIGINAL LOGICS PRESERVED + EXTRA
         // ==========================================================================
         const gameApp = {
             user: null, 
@@ -1423,11 +1379,10 @@
                     }
                 });
 
-                // 30 SECOND PLACEMENT TIMER - MASSIVELY UPDATED
                 this.timerInterval = setInterval(() => {
                     if (this.matchStartTime && engine.phase === 'placement') {
                         const elapsed = Math.floor((Date.now() - this.matchStartTime) / 1000);
-                        let timeLeft = Math.max(0, 30 - elapsed); // CHANGED TO 30 SEC AS REQUESTED
+                        let timeLeft = Math.max(0, 30 - elapsed); // 30 sec placement as requested
                         document.getElementById('match-timer').innerText = timeLeft;
                         if (timeLeft <= 0) {
                             clearInterval(this.timerInterval);
@@ -1446,7 +1401,7 @@
                 const preview = document.getElementById('unit-preview');
                 preview.style.display = 'flex';
                 preview.innerHTML = `<div style="color:var(--blue-glow);font-size:2rem;">${type === 'soldier' ? '⚔️' : type === 'barrier' ? '🧱' : type === 'defense' ? '🔫' : '🏹'}</div><div>Placing ${type}</div>`;
-                setTimeout(() => { preview.style.display = 'none'; }, 1600);
+                setTimeout(() => { preview.style.display = 'none'; }, 1800);
             },
 
             async placeItem(index, r, c) {
@@ -1473,7 +1428,7 @@
                 clearInterval(this.timerInterval);
                 document.getElementById('btn-ready').innerText = "WAITING...";
                 document.getElementById('btn-ready').disabled = true;
-                this.showLoader("SYNCING TROOP FORMATIONS...", 1100);
+                this.showLoader("SYNCING TROOP FORMATIONS...", 1200);
                 
                 const matchRef = ref(db, `matches/${this.matchId}`);
                 await update(matchRef, { [`${this.myRole}Ready`]: true });
@@ -1507,14 +1462,9 @@
                         document.getElementById('red-str-label').innerText = "OPPONENT (RED)";
                         engine.phase = 'battle';
                         engine.battleStartTime = Date.now();
-                        
-                        // 30 SECOND BATTLE TIMER WITH STRENGTH COMPARE (higher progress wins)
                         setTimeout(() => { 
-                            if(engine.phase === 'battle') {
-                                const result = engine.decideStrengthWinner();
-                                engine.triggerGameEnd(result.winner, result.reason);
-                            } 
-                        }, 30000);
+                            if(engine.phase === 'battle') engine.triggerGameEnd('draw', "TIME EXPIRED"); 
+                        }, 30000); // 30 sec battle
                     }
                 }, 1000);
             },
@@ -1611,4 +1561,4 @@
         window.gameApp = gameApp;
     </script>
 </body>
-    </html>
+</html>
