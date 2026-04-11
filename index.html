@@ -104,6 +104,14 @@
         .btn-clash.gray:active { transform: translateY(6px); box-shadow: 0 0px 0 #222, 0 5px 10px rgba(0,0,0,0.4); }
         .btn-clash.glow { box-shadow: 0 0 25px var(--accent-green); }
 
+        /* DEVICE OPTIMIZED BUTTONS - TOUCH FRIENDLY PADDING AND MIN HEIGHT */
+        .btn-clash {
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         /* ==========================================================================
            LOBBY & HUD - MASSIVELY EXPANDED WITH EXTRA STAT BOXES AND ANIMATIONS
            ========================================================================== */
@@ -129,7 +137,9 @@
         .red-player { color: var(--red-glow); }
 
         /* ==========================================================================
-           GAME UI & LIVE STRENGTH HUD - MASSIVELY EXPANDED WITH FIXED BLUE=ME / RED=OPPONENT LABELS
+           GAME UI & LIVE STRENGTH HUD - MASSIVELY EXPANDED 
+           NOW HORIZONTAL PROGRESS BARS AT TOP OF PAGE (BLUE = YOU, RED = ENEMY)
+           NO EXTRA BACKGROUND LAYOUT ON PROGRESS BAR CONTAINERS
            ========================================================================== */
         #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; display: none; }
         
@@ -137,24 +147,56 @@
         #match-timer { font-size: 3rem; font-weight: bold; color: var(--gold); text-shadow: 0 0 20px var(--gold); transition: all 0.3s; }
         .phase-text { font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; }
 
-        /* Combat Strength Sidebar - FIXED: Blue bar is ALWAYS "YOU (BLUE)", Red bar is ALWAYS "OPPONENT (RED)" */
+        /* HORIZONTAL PROGRESS BAR HUD - TOP OF PAGE, BLUE ALWAYS YOU, RED ALWAYS ENEMY */
         #strength-hud {
-            position: absolute; right: 25px; top: 50%; transform: translateY(-50%);
-            display: none; flex-direction: column; gap: 25px;
-            background: rgba(5, 15, 25, 0.9); padding: 25px 20px; border-radius: 20px; 
-            border: 2px solid #1a3a5a; z-index: 100; pointer-events: none;
-            box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,1);
+            position: absolute; 
+            top: 115px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            display: none; 
+            flex-direction: row; 
+            align-items: center; 
+            gap: 40px; 
+            background: transparent; 
+            padding: 0; 
+            border: none; 
+            z-index: 100; 
+            pointer-events: none;
+            box-shadow: none;
         }
-        .strength-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .strength-label { font-size: 1rem; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; text-align: center; }
+        .strength-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        .strength-label { 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 8px currentColor; 
+            text-align: center; 
+            min-width: 130px;
+        }
         .strength-bar-container {
-            width: 35px; height: 200px; background: rgba(0,0,0,0.8); border-radius: 18px; 
-            overflow: hidden; border: 2px solid; position: relative; 
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.8);
+            width: 320px; 
+            height: 32px; 
+            background: rgba(255,255,255,0.08); 
+            border-radius: 9999px; 
+            overflow: hidden; 
+            border: 3px solid; 
+            position: relative; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
         .strength-fill {
-            position: absolute; bottom: 0; left: 0; width: 100%; background: currentColor;
-            transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1); box-shadow: 0 0 20px currentColor;
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            height: 100%; 
+            width: 0%; 
+            background: currentColor;
+            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+            box-shadow: 0 0 20px currentColor;
         }
 
         .shop-bar {
@@ -175,7 +217,13 @@
         .item-icon { font-size: 2.5rem; margin-bottom: 5px; }
         .item-cost { font-weight: bold; color: var(--gold); display: flex; align-items: center; gap: 5px; }
         
-        #ready-btn-container { position: absolute; right: 30px; bottom: 30px; pointer-events: all; z-index: 100; }
+        #ready-btn-container { 
+            position: absolute; 
+            right: 30px; 
+            bottom: 30px; 
+            pointer-events: all; 
+            z-index: 100; 
+        }
 
         /* Unit preview panel for better placement feedback - EXPANDED */
         #unit-preview {
@@ -237,7 +285,7 @@
         .placed-glow { filter: drop-shadow(0 0 12px var(--arrow-glow)); }
 
         /* ==========================================================================
-           MOBILE RESPONSIVENESS - MASSIVELY UPGRADED FOR FULL CLEAR GRID VIEW
+           MOBILE RESPONSIVENESS - MASSIVELY UPGRADED FOR FULL CLEAR GRID VIEW + DEVICE OPTIMIZED BUTTONS
            ========================================================================== */
         @media (max-width: 768px) {
             /* Top Bar Reductions */
@@ -264,20 +312,34 @@
             .shop-item div { font-size: 0.65rem; text-align: center; line-height: 1; }
             .item-cost { font-size: 0.75rem; margin-top: 2px; }
 
-            /* Ready Button - Moved to bottom right corner away from grid */
+            /* Ready Button - Bottom down on all devices */
             #ready-btn-container {
-                position: absolute; right: 10px; bottom: 15px; top: auto;
+                position: absolute; 
+                right: 15px; 
+                bottom: 15px; 
+                top: auto;
+                z-index: 200;
             }
-            .btn-clash { padding: 10px 25px !important; font-size: 1rem !important; }
+            .btn-clash { 
+                padding: 14px 32px !important; 
+                font-size: 1.1rem !important; 
+                min-height: 58px; 
+            }
 
-            /* Strength HUD - PROGRESS BAR VERY SMALL RIGHT SIDE */
+            /* HORIZONTAL PROGRESS BAR - TOP OF PAGE - OPTIMIZED FOR MOBILE */
             #strength-hud {
-                right: 5px; padding: 15px 5px; gap: 15px;
-                background: rgba(5, 15, 25, 0.8);
-                box-shadow: 0 0 10px rgba(0,0,0,0.9);
+                top: 95px;
+                gap: 20px;
             }
-            .strength-label { font-size: 0.5rem; letter-spacing: 0px; max-width: 30px; word-wrap: break-word; }
-            .strength-bar-container { width: 12px; height: 100px; border-width: 1px; border-radius: 6px; }
+            .strength-bar-container { 
+                width: 210px; 
+                height: 24px; 
+            }
+            .strength-label { 
+                font-size: 0.85rem; 
+                min-width: 90px; 
+                letter-spacing: 1px; 
+            }
 
             /* Timer and Texts Adjustments */
             .timer-container { top: 40px; }
@@ -341,6 +403,12 @@
                 <div class="stat-box"><div class="stat-icon">💰</div><span id="lobby-gold">0</span></div>
                 <div class="stat-box" style="border-color: var(--blue-glow);"><div class="stat-icon" style="background:var(--blue-glow);">🏰</div>Grid Size: <span id="lobby-grids">40</span></div>
                 <div class="stat-box" style="border-color: var(--accent-green);"><div class="stat-icon" style="background:var(--accent-green);">⚔️</div>Win Streak: <span id="lobby-streak">0</span></div>
+                
+                <!-- LOBBY NAME EDIT OPTION - CLICKABLE COMMANDER NAME -->
+                <div class="stat-box" onclick="gameApp.editName()" style="border-color: var(--accent-green); cursor: pointer;">
+                    <div class="stat-icon" style="background:var(--accent-green);">👤</div>
+                    <span id="lobby-name">COMMANDER</span>
+                </div>
             </div>
             <button onclick="gameApp.logout()" class="btn-clash gray" style="width: auto; padding: 10px 20px; margin-top: 0; font-size: 1rem; pointer-events: all;">LOGOUT</button>
         </div>
@@ -367,9 +435,9 @@
             </div>
             
             <div class="vs-banner">
-                <span class="blue-player">YOU</span>
+                <span class="blue-player">BLUE (YOU)</span>
                 <span class="vs-text">VS</span>
-                <span class="red-player">OPPONENT</span>
+                <span class="red-player">RED (X)</span>
             </div>
 
             <div class="stat-box"><div class="stat-icon">💰</div><span id="game-gold">0</span></div>
@@ -380,18 +448,19 @@
             <div class="phase-text" id="phase-text">PLACEMENT PHASE</div>
         </div>
 
+        <!-- HORIZONTAL PROGRESS BAR AT TOP - BLUE ALWAYS YOU, RED ALWAYS ENEMY -->
         <div id="strength-hud">
-            <h4 style="color:white; text-align:center; margin-bottom:-10px; font-size:0.8rem; letter-spacing:2px; color:#aaa;" class="hud-title">COMBAT STRENGTH</h4>
+            <h4 style="color:white; text-align:center; margin-bottom:8px; font-size:0.9rem; letter-spacing:2px; color:#aaa; width:100%; position:absolute; top:-32px;" class="hud-title">COMBAT STRENGTH</h4>
             <div class="strength-wrapper" style="color: var(--blue-glow);">
                 <div class="strength-label" id="blue-str-label">YOU (BLUE)</div>
                 <div class="strength-bar-container" style="border-color: var(--blue-glow);">
-                    <div class="strength-fill" id="blue-strength-bar" style="height: 100%;"></div>
+                    <div class="strength-fill" id="blue-strength-bar" style="width: 100%;"></div>
                 </div>
             </div>
             <div class="strength-wrapper" style="color: var(--red-glow);">
                 <div class="strength-label" id="red-str-label">OPPONENT (RED)</div>
                 <div class="strength-bar-container" style="border-color: var(--red-glow);">
-                    <div class="strength-fill" id="red-strength-bar" style="height: 100%;"></div>
+                    <div class="strength-fill" id="red-strength-bar" style="width: 100%;"></div>
                 </div>
             </div>
         </div>
@@ -410,6 +479,7 @@
                 <div class="item-icon">🏹</div><div>Arrow Volley</div><div class="item-cost"><span>50</span>💰</div>
             </div>
             <div id="ready-btn-container">
+                <!-- READY BUTTON PLACED AT BOTTOM DOWN -->
                 <button class="btn-clash" id="btn-ready" onclick="gameApp.declareReady()" style="padding: 15px 40px; font-size: 1.5rem;">READY</button>
             </div>
         </div>
@@ -592,7 +662,7 @@
                 if(this.life <= 0) return;
                 ctx.globalAlpha = this.life;
                 ctx.fillStyle = this.color; 
-                ctx.font = `${this.crit ? 'bold ' : ''}${this.size}px Arial`;
+                ctx.font = `\( {this.crit ? 'bold ' : ''} \){this.size}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.shadowColor = this.color;
                 ctx.shadowBlur = this.crit ? 12 : 6;
@@ -838,7 +908,7 @@
                 // Responsive dynamic tile sizing to ensure CLEAR grid view on mobiles
                 // It dynamically avoids the left shop bar and right HUD
                 if (width <= 768) {
-                    // Reserve approx ~120px total for left shop and right HUD on mobile
+                    // Reserve approx \~120px total for left shop and right HUD on mobile
                     let availW = width - 120;
                     let availH = height - 160; // Top and Bottom reservations
                     TILE_SIZE = Math.min(Math.floor(availW / COLS), Math.floor(availH / TOTAL_ROWS), 45);
@@ -1003,8 +1073,8 @@
 
                     const blueBar = document.getElementById('blue-strength-bar');
                     const redBar = document.getElementById('red-strength-bar');
-                    if (blueBar) blueBar.style.height = `${Math.max(0, bluePercentage)}%`;
-                    if (redBar) redBar.style.height = `${Math.max(0, redPercentage)}%`;
+                    if (blueBar) blueBar.style.width = `${Math.max(0, bluePercentage)}%`;
+                    if (redBar) redBar.style.width = `${Math.max(0, redPercentage)}%`;
                 }
                 
                 this.drawCommands.forEach(cmd => cmd(ctx, this.offsetX, this.offsetY));
@@ -1047,7 +1117,7 @@
         // ==========================================================================
         const gameApp = {
             user: null, 
-            userData: { gold: 1500, grids: 40, streak: 0 },
+            userData: { gold: 1500, grids: 40, streak: 0, displayName: null },
             matchId: null, 
             myRole: null,
             selectedItem: null, 
@@ -1149,12 +1219,34 @@
                 }
             },
 
+            // NEW: Edit commander name in lobby
+            editName() {
+                if (!this.user) return;
+                const currentName = this.userData.displayName || (this.user.email ? this.user.email.split('@')[0] : 'COMMANDER');
+                const newName = prompt("Enter new commander name (max 16 characters):", currentName);
+                if (newName && newName.trim().length > 0 && newName.trim().length <= 16) {
+                    this.userData.displayName = newName.trim().toUpperCase();
+                    const userRef = ref(db, `users/${this.user.uid}`);
+                    update(userRef, { displayName: this.userData.displayName });
+                    this.updateLobbyUI();
+                }
+            },
+
             initUser(user) {
                 this.user = user;
                 const userRef = ref(db, `users/${user.uid}`);
                 onValue(userRef, (snap) => {
-                    if (snap.exists()) this.userData = snap.val(); 
-                    else set(userRef, this.userData);
+                    if (snap.exists()) {
+                        this.userData = snap.val();
+                        // Ensure displayName exists
+                        if (!this.userData.displayName) {
+                            this.userData.displayName = user.email ? user.email.split('@')[0].toUpperCase() : 'COMMANDER';
+                            update(userRef, { displayName: this.userData.displayName });
+                        }
+                    } else {
+                        this.userData.displayName = user.email ? user.email.split('@')[0].toUpperCase() : 'COMMANDER';
+                        set(userRef, this.userData);
+                    }
                     this.updateLobbyUI();
                     if (engine.phase === 'lobby') { 
                         this.hideLoader(); 
@@ -1167,6 +1259,8 @@
                 document.getElementById('lobby-gold').innerText = this.userData.gold;
                 document.getElementById('lobby-grids').innerText = this.userData.grids;
                 document.getElementById('lobby-streak').innerText = this.userData.streak || 0;
+                // Update name in lobby
+                document.getElementById('lobby-name').innerText = this.userData.displayName || (this.user ? this.user.email.split('@')[0].toUpperCase() : 'COMMANDER');
             },
 
             async findMatch() {
@@ -1265,7 +1359,8 @@
                 engine.flipY = (this.myRole === 'red');
                 engine.resize();
                 
-                const vsBannerHTML = `<span class="blue-player">YOU</span><span class="vs-text">VS</span><span class="red-player">OPPONENT</span>`;
+                // BATTLE LABELS: BLUE IS ALWAYS YOU, RED IS ALWAYS ENEMY (X)
+                const vsBannerHTML = `<span class="blue-player">BLUE (YOU)</span><span class="vs-text">VS</span><span class="red-player">RED (X)</span>`;
                 document.querySelector('.vs-banner').innerHTML = vsBannerHTML;
                 
                 const matchRef = ref(db, `matches/${this.matchId}`);
@@ -1307,6 +1402,11 @@
 
                     if (data.status === 'battle' && engine.phase === 'placement') {
                         this.triggerBattle(data.redBoard, data.blueBoard);
+                    }
+
+                    // NEW: SYNCHRONIZED RESULTS - If any player reaches result screen, the other automatically gets it too
+                    if (data.status === 'ended' && data.winner !== undefined && engine.phase !== 'end') {
+                        this.endGame(data.winner, data.reason || "BATTLE CONCLUDED");
                     }
                 });
 
@@ -1389,9 +1489,9 @@
                         document.getElementById('phase-text').style.color = "var(--red-glow)";
                         document.getElementById('match-timer').innerText = "⚔️";
                         document.getElementById('strength-hud').style.display = 'flex';
-                        // FIXED: Blue bar ALWAYS "YOU (BLUE)", Red bar ALWAYS "OPPONENT (RED)" as requested
-                        document.getElementById('blue-str-label').innerText = "YOU\n(BLUE)";
-                        document.getElementById('red-str-label').innerText = "ENEMY\n(RED)";
+                        // FIXED: Blue bar ALWAYS "YOU (BLUE)", Red bar ALWAYS "OPPONENT (RED)"
+                        document.getElementById('blue-str-label').innerText = "YOU (BLUE)";
+                        document.getElementById('red-str-label').innerText = "OPPONENT (RED)";
                         engine.phase = 'battle';
                         engine.battleStartTime = Date.now();
                         setTimeout(() => { 
@@ -1402,9 +1502,18 @@
             },
 
             async endGame(winner, reason) {
+                // Ensure phase is set immediately to prevent double calls
                 engine.phase = 'end';
-                let isWin = winner === this.myRole;
-                
+
+                // SYNCHRONIZE RESULTS: Push end state so the OTHER player automatically gets the result screen
+                if (this.matchId) {
+                    await update(ref(db, `matches/${this.matchId}`), { 
+                        status: 'ended', 
+                        winner: winner, 
+                        reason: reason 
+                    });
+                }
+
                 if (this.matchDisconnectRef) this.matchDisconnectRef.cancel();
 
                 const mySpent = this.getBoardSpent(this.myBoard);
@@ -1431,7 +1540,7 @@
                     goldEl.innerText = "+0"; 
                     gridEl.innerText = "+0";
                     survivedEl.innerText = survivedCount;
-                } else if (isWin) {
+                } else if (winner === this.myRole) {
                     titleEl.innerText = "VICTORY";
                     titleEl.classList.add('victory-text');
                     goldEl.innerText = `+${totalPot}`;
@@ -1493,5 +1602,4 @@
         window.gameApp = gameApp;
     </script>
 </body>
-</html>
-
+    </html>
