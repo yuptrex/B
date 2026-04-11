@@ -69,6 +69,12 @@
         .screen.active { display: flex; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
+        /* LOBBY BACKGROUND UPDATE */
+        #screen-lobby {
+            background: linear-gradient(rgba(2, 11, 20, 0.88), rgba(10, 0, 20, 0.95)), 
+                        url('https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat;
+        }
+
         .panel-3d {
             background: var(--panel-bg);
             border: 2px solid var(--glass-border);
@@ -86,7 +92,6 @@
             text-align: center; transition: all 0.3s;
         }
         .input-field:focus { outline: none; border-color: var(--blue-glow); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
-        .input-inline { width: 68%; display: inline-block; margin-right: 2%; }
 
         .btn-clash {
             width: 100%; padding: 16px; margin-top: 20px;
@@ -101,11 +106,12 @@
         .btn-clash.red:active { box-shadow: 0 0px 0 #800020; }
         .btn-clash.gray { background: linear-gradient(to bottom, #666, #444); box-shadow: 0 6px 0 #222; }
         .btn-clash.gray:active { box-shadow: 0 0px 0 #222; }
+        .btn-clash.gold { background: linear-gradient(to bottom, #ffcf33, #e6b800); box-shadow: 0 6px 0 #b38f00; color: #000; text-shadow: none; }
+        .btn-clash.gold:active { box-shadow: 0 0px 0 #b38f00; }
         .btn-clash.glow { box-shadow: 0 0 25px var(--accent-green); }
-        .btn-inline { width: 28%; display: inline-block; padding: 15px 0; margin-top: 0; }
 
         /* ==========================================================================
-           LOBBY HUD
+           LOBBY HUD & MODALS
            ========================================================================== */
         .top-bar {
             position: absolute; top: 0; left: 0; width: 100%; padding: 15px 30px;
@@ -115,9 +121,12 @@
         .stat-box {
             background: rgba(0,0,0,0.6); border: 2px solid var(--gold); border-radius: 30px;
             padding: 5px 20px 5px 5px; display: flex; align-items: center; gap: 10px;
-            font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 15px rgba(255, 207, 51, 0.3); pointer-events: all;
+            font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 15px rgba(255, 207, 51, 0.3); pointer-events: all; cursor: default;
         }
         .stat-icon { width: 35px; height: 35px; background: var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; animation: statPulse 2s infinite; }
+
+        .profile-btn { cursor: pointer; transition: all 0.2s; border-color: #fff !important; }
+        .profile-btn:hover { background: rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); transform: scale(1.05); }
 
         .vs-banner {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
@@ -128,8 +137,50 @@
         .blue-player { color: var(--blue-glow); }
         .red-player { color: var(--red-glow); }
 
+        /* MODALS */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px); z-index: 5000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .custom-modal-overlay.active { opacity: 1; pointer-events: all; display: flex; }
+        
+        .modal-content {
+            background: rgba(10, 20, 30, 0.95); border: 2px solid var(--blue-glow); border-radius: 15px;
+            padding: 30px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; max-height: 85vh;
+        }
+        .custom-modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: #aaa; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #fff; }
+
+        /* LEADERBOARD STYLES */
+        .rank-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .rank-tab {
+            background: rgba(0,0,0,0.6); border: 1px solid #444; color: #aaa; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: all 0.2s;
+        }
+        .rank-tab.active { background: var(--blue-glow); color: #000; border-color: #fff; box-shadow: 0 0 15px var(--blue-glow); }
+        .leaderboard-list {
+            flex: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px;
+            border: 1px solid #333; margin-bottom: 15px;
+        }
+        .rank-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 12px 15px;
+            background: rgba(255,255,255,0.05); border-bottom: 1px solid #222; border-radius: 5px; margin-bottom: 5px;
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-number { font-size: 1.2rem; font-weight: bold; color: var(--gold); width: 40px; text-align: left; }
+        .rank-name { flex: 1; text-align: left; font-weight: bold; font-size: 1.1rem; }
+        .rank-score { font-size: 1.1rem; color: var(--accent-green); font-weight: bold; }
+        
+        .rank-item.my-rank { background: rgba(0, 229, 255, 0.2); border: 1px solid var(--blue-glow); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+        .rank-item.rank-1 { background: linear-gradient(90deg, rgba(255, 207, 51, 0.2), transparent); border-left: 4px solid var(--gold); }
+        .rank-1 .rank-name::after { content: ' 👑'; font-size: 1.2rem; }
+
         /* ==========================================================================
-           GAME UI & LIVE STRENGTH HUD - HORIZONTAL & TOP ALIGNED, NO BG
+           GAME UI & LIVE STRENGTH HUD
            ========================================================================== */
         #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; display: none; }
         
@@ -137,7 +188,6 @@
         #match-timer { font-size: 3rem; font-weight: bold; color: var(--gold); text-shadow: 0 0 20px var(--gold); transition: all 0.3s; }
         .phase-text { font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; }
 
-        /* Horizontal Top HUD - No background layouts */
         #strength-hud {
             position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
             display: none; flex-direction: row; justify-content: space-between; gap: 30px;
@@ -148,8 +198,7 @@
         .strength-label { font-size: 1rem; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
         .strength-bar-container {
             width: 100%; height: 16px; background: rgba(0,0,0,0.5); border-radius: 8px; 
-            overflow: hidden; border: 2px solid; position: relative; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+            overflow: hidden; border: 2px solid; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.8);
         }
         .strength-fill {
             position: absolute; top: 0; height: 100%; background: currentColor;
@@ -176,10 +225,7 @@
         .item-icon { font-size: 2.5rem; margin-bottom: 5px; }
         .item-cost { font-weight: bold; color: var(--gold); display: flex; align-items: center; gap: 5px; }
         
-        /* Dedicated placement for ready button to avoid ANY overlap */
-        #ready-btn-container { 
-            position: fixed; right: 30px; bottom: 30px; pointer-events: all; z-index: 1000;
-        }
+        #ready-btn-container { position: fixed; right: 30px; bottom: 30px; pointer-events: all; z-index: 1000; }
         #btn-ready { padding: 15px 40px; font-size: 1.5rem; border-radius: 12px; margin: 0; }
 
         #unit-preview {
@@ -224,27 +270,19 @@
         .stat-change.pos { color: #00ff88; }
         .stat-change.neg { color: #ff0044; }
 
-        #battle-log {
-            position: absolute; left: 25px; bottom: 25px; width: 280px; max-height: 180px;
-            background: rgba(0,0,0,0.6); border-radius: 12px; padding: 12px; overflow-y: auto;
-            font-size: 0.9rem; color: #ddd; display: none; z-index: 70;
-            pointer-events: none;
-        }
-
         /* ==========================================================================
            MOBILE RESPONSIVENESS
            ========================================================================== */
         @media (max-width: 768px) {
             .top-bar { padding: 5px 10px; flex-wrap: wrap; }
-            .stat-box { font-size: 0.9rem; padding: 2px 10px 2px 2px; gap: 5px; }
+            .stat-box { font-size: 0.8rem; padding: 2px 8px 2px 2px; gap: 4px; }
             .stat-icon { width: 22px; height: 22px; font-size: 0.8rem; }
             .vs-banner { font-size: 0.8rem; padding: 3px 15px; top: 8px; }
             .top-bar h3 { font-size: 1rem; }
             #enemy-state { font-size: 0.8rem; }
 
             .shop-bar {
-                top: 50%; left: 0; bottom: auto;
-                transform: translateY(-50%);
+                top: 50%; left: 0; bottom: auto; transform: translateY(-50%);
                 flex-direction: column; width: auto; padding: 10px;
                 background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);
                 justify-content: flex-start; gap: 8px;
@@ -254,26 +292,20 @@
             .shop-item div { font-size: 0.65rem; text-align: center; line-height: 1; }
             .item-cost { font-size: 0.75rem; margin-top: 2px; }
 
-            /* Refined Safe Position for Mobile Ready Button */
             #ready-btn-container { right: 15px; bottom: 15px; }
             #btn-ready { padding: 12px 25px !important; font-size: 1.2rem !important; }
 
-            /* HUD Updates for Mobile */
             #strength-hud { top: 90px; gap: 15px; width: 95%; }
             .strength-label { font-size: 0.7rem; }
             .strength-bar-container { height: 10px; border-width: 1px; }
             .timer-container { top: 40px; }
             #match-timer { font-size: 2rem; }
-            .phase-text { font-size: 0.7rem; }
             
             .panel-3d { padding: 25px 15px; width: 95%; }
-            .input-inline { width: 60%; }
-            .btn-inline { width: 35%; padding: 12px 0; font-size: 0.9rem; }
             .result-title { font-size: 3rem; }
             .result-stats { font-size: 1rem; padding: 10px 20px; }
             
             #unit-preview { bottom: 80px; padding: 5px 15px; font-size: 0.8rem; }
-            #battle-log { left: 80px; bottom: 10px; width: 200px; font-size: 0.7rem; padding: 8px; }
         }
     </style>
 </head>
@@ -313,10 +345,13 @@
 
     <div id="screen-lobby" class="screen">
         <div class="top-bar">
-            <div style="display: flex; gap: 15px;">
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                 <div class="stat-box"><div class="stat-icon">💰</div><span id="lobby-gold">0</span></div>
-                <div class="stat-box" style="border-color: var(--blue-glow);"><div class="stat-icon" style="background:var(--blue-glow);">🏰</div>Grid Size: <span id="lobby-grids">40</span></div>
-                <div class="stat-box" style="border-color: var(--accent-green);"><div class="stat-icon" style="background:var(--accent-green);">⚔️</div>Win Streak: <span id="lobby-streak">0</span></div>
+                <div class="stat-box" style="border-color: var(--blue-glow);"><div class="stat-icon" style="background:var(--blue-glow);">🏰</div><span id="lobby-grids">40</span></div>
+                <div class="stat-box" style="border-color: var(--accent-green);"><div class="stat-icon" style="background:var(--accent-green);">⚔️</div><span id="lobby-streak">0</span></div>
+                <div class="stat-box profile-btn" onclick="gameApp.toggleProfileModal()">
+                    <div class="stat-icon" style="background:#fff;">👤</div><span id="lobby-profile-name">Commander</span>
+                </div>
             </div>
             <button onclick="gameApp.logout()" class="btn-clash gray" style="width: auto; padding: 10px 20px; margin-top: 0; font-size: 1rem; pointer-events: all;">LOGOUT</button>
         </div>
@@ -324,20 +359,44 @@
         <div class="panel-3d" style="background: rgba(10, 0, 20, 0.85); border-color: var(--red-glow); box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(255, 0, 68, 0.2);">
             <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 15px var(--red-glow);">WAR ROOM</h2>
             
-            <div style="margin-bottom: 25px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 1px solid #444;">
-                <p style="font-size: 0.8rem; color: #aaa; text-align: left; margin-bottom: 5px; letter-spacing: 1px;">IDENTITY SETTINGS</p>
-                <input type="text" id="lobby-name-input" class="input-field input-inline" placeholder="Enter Commander Name">
-                <button class="btn-clash glow btn-inline" onclick="gameApp.saveName()" style="background: linear-gradient(to bottom, #00ff88, #00cc6a);">SAVE</button>
-            </div>
-
-            <p style="color: #ccc; margin-bottom: 30px; line-height: 1.5;">Expand your city by conquering enemies.<br>Lose battles, lose gold.<br>Master movement tactics for victory.</p>
+            <p style="color: #ccc; margin-bottom: 20px; line-height: 1.5;">Expand your city by conquering enemies.<br>Lose battles, lose gold.<br>Master movement tactics for victory.</p>
             
+            <button class="btn-clash gold" onclick="gameApp.toggleLeaderboard()" style="margin-bottom: 20px; font-size: 1.2rem; padding: 15px;">🏆 VIEW RANKINGS</button>
+
             <button class="btn-clash red" id="btn-matchmake" onclick="gameApp.findMatch()" style="font-size: 1.8rem; padding: 25px; letter-spacing: 2px;">FIND OPPONENT</button>
             <button class="btn-clash gray" id="btn-cancel-match" onclick="gameApp.cancelMatch()" style="display: none; font-size: 1.2rem; padding: 15px; margin-top: 10px;">CANCEL SEARCH</button>
             
             <div id="match-status-container" style="display: none; margin-top: 25px;">
                 <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; border-top-color: var(--red-glow); margin: 0 auto 10px auto;"></div>
                 <p id="match-status" style="color: var(--red-glow); font-weight: bold; letter-spacing: 1px;">SEARCHING SATELLITES...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-profile" class="custom-modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="gameApp.toggleProfileModal()">✖</span>
+            <h2 style="color: white; margin-bottom: 10px; font-size: 2rem;">IDENTITY SETTINGS</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Update your commander name.</p>
+            <input type="text" id="modal-name-input" class="input-field" placeholder="Enter Commander Name" style="margin-bottom: 20px;">
+            <button class="btn-clash glow" onclick="gameApp.saveName()" style="background: linear-gradient(to bottom, #00ff88, #00cc6a);">SAVE IDENTITY</button>
+        </div>
+    </div>
+
+    <div id="modal-leaderboard" class="custom-modal-overlay">
+        <div class="modal-content" style="height: 80vh;">
+            <span class="close-btn" onclick="gameApp.toggleLeaderboard()">✖</span>
+            <h2 style="color: var(--gold); margin-bottom: 5px; font-size: 2.2rem; text-shadow: 0 0 10px var(--gold);">TOP 100 COMMANDERS</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Global Hall of Fame</p>
+            
+            <div class="rank-tabs">
+                <div class="rank-tab active" id="tab-streak" onclick="gameApp.loadRankings('streak')">⚔️ Streak</div>
+                <div class="rank-tab" id="tab-grids" onclick="gameApp.loadRankings('grids')">🏰 Grids</div>
+                <div class="rank-tab" id="tab-gold" onclick="gameApp.loadRankings('gold')">💰 Gold</div>
+            </div>
+
+            <div class="leaderboard-list" id="leaderboard-list">
+                <p style="color: #666; margin-top: 20px;">Loading Satellites...</p>
             </div>
         </div>
     </div>
@@ -398,7 +457,6 @@
         </div>
 
         <div id="unit-preview"></div>
-        <div id="battle-log"></div>
     </div>
 
     <div id="result-popup">
@@ -433,7 +491,104 @@
         const db = getDatabase(app);
 
         // ==========================================================================
-        // CANVAS ENGINE - Dynamic Rendering applied for 1st person Perspective (Blue=Me)
+        // DYNAMIC AUDIO ENGINE (WEB AUDIO API)
+        // ==========================================================================
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.lobbyMusicNodes = [];
+                this.isPlayingLobby = false;
+                this.initialized = false;
+                
+                // Unlock audio context on any user interaction
+                const unlock = () => {
+                    if (!this.initialized) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        this.ctx = new AudioContext();
+                        this.initialized = true;
+                        if (engine.phase === 'lobby') this.playLobbyMusic();
+                    } else if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                };
+                window.addEventListener('click', unlock, { once: false });
+                window.addEventListener('touchstart', unlock, { once: false });
+            }
+
+            playLobbyMusic() {
+                if (!this.ctx || this.isPlayingLobby) return;
+                this.isPlayingLobby = true;
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc1.type = 'sine'; osc2.type = 'triangle';
+                osc1.frequency.value = 65.41; // C2
+                osc2.frequency.value = 98.00; // G2
+                
+                gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 3); // Fade in
+
+                osc1.connect(gain); osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc1.start(); osc2.start();
+                this.lobbyMusicNodes.push({ osc1, osc2, gain });
+            }
+
+            stopLobbyMusic() {
+                if (!this.isPlayingLobby || !this.ctx) return;
+                this.isPlayingLobby = false;
+                this.lobbyMusicNodes.forEach(node => {
+                    node.gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 1);
+                    setTimeout(() => { node.osc1.stop(); node.osc2.stop(); }, 1000);
+                });
+                this.lobbyMusicNodes = [];
+            }
+
+            playSoldierAttack() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playCannonFire() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.4);
+            }
+
+            playArrowFire() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(400, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+            }
+        }
+        const sfx = new AudioEngine();
+
+        // ==========================================================================
+        // CANVAS ENGINE
         // ==========================================================================
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
@@ -600,9 +755,12 @@
                         if (this.cooldown <= 0) {
                             this.cooldown = this.cooldownMax;
                             if (this.type === 'soldier') {
+                                sfx.playSoldierAttack();
                                 this.target.takeDamage(this.damage, engine);
                                 engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 8, 3);
                             } else if (this.type === 'defense' || this.type === 'arrow') {
+                                if(this.type === 'defense') sfx.playCannonFire();
+                                else sfx.playArrowFire();
                                 const px = this.x + Math.cos(this.angle) * 12; const py = this.y + Math.sin(this.angle) * 12;
                                 const pdx = this.target.x - px; const pdy = this.target.y - py;
                                 const pdist = Math.hypot(pdx, pdy) || 1;
@@ -626,11 +784,9 @@
                     engine.spawnParticles(this.x, this.y, pColor, 28, 6, this.type === 'main' ? 'fire' : 'normal');
                     
                     if (this.type === 'main') {
-                        // Global Sync End Logic
                         const winningTeam = (this.team === 'blue') ? 'red' : 'blue';
                         engine.triggerGameEnd(winningTeam, "BASE DESTROYED");
                     }
-                    if (engine.battleLog) engine.battleLog.push(`${this.type.toUpperCase()} eliminated!`);
                 }
             }
 
@@ -696,7 +852,7 @@
         class GameEngine {
             constructor() {
                 this.entities = []; this.particles = []; this.floatingTexts = []; this.projectiles = [];
-                this.battleLog = []; this.phase = 'lobby'; 
+                this.phase = 'lobby'; 
                 this.offsetX = 0; this.offsetY = 0; this.flipY = false;
                 this.maxBlueHp = 1; this.maxRedHp = 1;
                 canvas.addEventListener('click', (e) => this.handleClick(e));
@@ -725,8 +881,9 @@
             startPlacement(myRole) {
                 this.phase = 'placement';
                 this.entities = [new Entity(0, 3.5, 'red', 'main'), new Entity(9, 3.5, 'blue', 'main')];
-                this.projectiles = []; this.battleLog = [];
+                this.projectiles = []; 
                 canvas.classList.remove('zoom-battle');
+                sfx.stopLobbyMusic(); // Stop music for Arena
             }
 
             prepareBattle(redBoard, blueBoard) {
@@ -783,15 +940,11 @@
                 }
             }
 
-            // Sync Game End for Both users simultaneously
             triggerGameEnd(winnerTeam, reason) {
                 if (this.phase === 'end') return;
                 this.phase = 'end';
-                
                 update(ref(db, `matches/${gameApp.matchId}`), {
-                    status: 'finished',
-                    winnerRole: winnerTeam,
-                    endReason: reason
+                    status: 'finished', winnerRole: winnerTeam, endReason: reason
                 });
             }
 
@@ -802,16 +955,19 @@
             }
 
             loop() {
+                if (this.phase === 'lobby') {
+                    ctx.clearRect(0, 0, width, height);
+                    requestAnimationFrame(() => this.loop());
+                    return;
+                }
+
                 ctx.fillStyle = '#020b14'; ctx.fillRect(0, 0, width, height);
 
                 ctx.lineWidth = 1.2;
                 for (let r = 0; r < TOTAL_ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         let x = c * TILE_SIZE + this.offsetX; let y = r * TILE_SIZE + this.offsetY;
-                        
-                        // Flip rendering overlay to map your rows visually correctly
                         const renderAsEnemyZone = this.flipY ? (r > 4) : (r < 5);
-                        
                         if (renderAsEnemyZone) { 
                             ctx.fillStyle = 'rgba(255, 0, 68, 0.07)'; ctx.strokeStyle = 'rgba(255, 0, 68, 0.22)'; 
                         } else { 
@@ -894,6 +1050,10 @@
             switchScreen(id) { 
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
                 document.getElementById(id).classList.add('active'); engine.resize();
+                
+                // Music Triggering per screen
+                if (id === 'screen-lobby') sfx.playLobbyMusic();
+                else sfx.stopLobbyMusic();
             },
             toggleAuth(view) {
                 if (view === 'signup') {
@@ -932,24 +1092,90 @@
                 onValue(userRef, (snap) => {
                     if (snap.exists()) {
                         this.userData = snap.val(); 
-                        document.getElementById('lobby-name-input').value = this.userData.username || "";
+                        document.getElementById('modal-name-input').value = this.userData.username || "";
                     } else set(userRef, this.userData);
                     this.updateLobbyUI();
-                    if (engine.phase === 'lobby') { this.hideLoader(); this.switchScreen('screen-lobby'); }
+                    if (engine.phase === 'lobby' || engine.phase === 'end_visual') { this.hideLoader(); this.switchScreen('screen-lobby'); engine.phase = 'lobby'; }
                 });
             },
 
+            toggleProfileModal() {
+                const modal = document.getElementById('modal-profile');
+                modal.classList.toggle('active');
+                if (modal.classList.contains('active')) {
+                    document.getElementById('modal-name-input').value = this.userData.username || "";
+                }
+            },
+
             saveName() {
-                const nameInput = document.getElementById('lobby-name-input').value.trim() || "Commander";
+                const nameInput = document.getElementById('modal-name-input').value.trim() || "Commander";
                 this.userData.username = nameInput;
                 update(ref(db, `users/${this.user.uid}`), { username: nameInput });
-                alert("Identity saved as: " + nameInput);
+                this.updateLobbyUI();
+                this.toggleProfileModal();
             },
 
             updateLobbyUI() {
                 document.getElementById('lobby-gold').innerText = this.userData.gold;
                 document.getElementById('lobby-grids').innerText = this.userData.grids;
                 document.getElementById('lobby-streak').innerText = this.userData.streak || 0;
+                document.getElementById('lobby-profile-name').innerText = this.userData.username || "Commander";
+            },
+
+            // LEADERBOARD LOGIC
+            toggleLeaderboard() {
+                const modal = document.getElementById('modal-leaderboard');
+                modal.classList.toggle('active');
+                if (modal.classList.contains('active')) { this.loadRankings('streak'); }
+            },
+
+            loadRankings(category) {
+                // Update tabs
+                document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
+                document.getElementById(`tab-${category}`).classList.add('active');
+                
+                const listEl = document.getElementById('leaderboard-list');
+                listEl.innerHTML = '<div class="spinner" style="margin: 30px auto; border-top-color: var(--gold);"></div><p style="color:var(--gold);">Fetching Intels...</p>';
+
+                get(ref(db, 'users')).then((snap) => {
+                    if (!snap.exists()) { listEl.innerHTML = "<p>No commanders found.</p>"; return; }
+                    let users = [];
+                    snap.forEach(childSnap => {
+                        users.push({ uid: childSnap.key, ...childSnap.val() });
+                    });
+                    
+                    // Sort descending
+                    users.sort((a, b) => {
+                        let valA = a[category] || 0; let valB = b[category] || 0;
+                        return valB - valA;
+                    });
+                    
+                    // Top 100
+                    users = users.slice(0, 100);
+                    
+                    listEl.innerHTML = '';
+                    users.forEach((u, index) => {
+                        const isMe = u.uid === this.user.uid;
+                        const rankClass = index === 0 ? 'rank-1' : '';
+                        const meClass = isMe ? 'my-rank' : '';
+                        
+                        let displayScore = u[category] || 0;
+                        if(category === 'gold') displayScore += ' 💰';
+                        if(category === 'grids') displayScore += ' 🏰';
+                        if(category === 'streak') displayScore += ' ⚔️';
+
+                        const div = document.createElement('div');
+                        div.className = `rank-item ${rankClass} ${meClass}`;
+                        div.innerHTML = `
+                            <div class="rank-number">#${index + 1}</div>
+                            <div class="rank-name">${u.username || 'Commander'} ${isMe ? '(YOU)' : ''}</div>
+                            <div class="rank-score">${displayScore}</div>
+                        `;
+                        listEl.appendChild(div);
+                    });
+                }).catch(() => {
+                    listEl.innerHTML = "<p>Signal lost. Could not load rankings.</p>";
+                });
             },
 
             async findMatch() {
@@ -1054,7 +1280,6 @@
                         return;
                     }
 
-                    // Strict auto-sync for both clients end result
                     if (data.status === 'finished' && engine.phase !== 'end_visual') {
                         engine.triggerGameEndLocal(data.winnerRole, data.endReason);
                     }
@@ -1150,7 +1375,7 @@
                 if (this.matchDisconnectRef) this.matchDisconnectRef.cancel();
 
                 const getBoardSpent = (board) => board ? board.reduce((sum, item) => sum + ({soldier:10, barrier:15, defense:30, arrow:50}[item] || 0), 0) : 0;
-                let totalPot = 0; // simplistic calculation for demo
+                let totalPot = 0; 
 
                 const titleEl = document.getElementById('result-title');
                 const reasonEl = document.getElementById('result-reason');
@@ -1193,6 +1418,7 @@
                 let btn = document.getElementById('btn-matchmake'); btn.disabled = false; btn.style.opacity = '1';
                 
                 this.matchId = null; this.myRole = null; canvas.classList.remove('zoom-battle');
+                engine.phase = 'lobby';
                 this.switchScreen('screen-lobby');
             }
         };
@@ -1205,3 +1431,4 @@
     </script>
 </body>
 </html>
+
