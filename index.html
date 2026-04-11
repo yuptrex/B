@@ -6,7 +6,7 @@
     <title>ULTIMATE CLASH: AUTO-BATTLER</title>
     <style>
         /* ==========================================================================
-           GLOBAL & VARIABLES - MASSIVELY EXPANDED WITH EXTRA THEME LAYERS, NEON LOBBY MATCHING SCREENSHOT,
+           GLOBAL & VARIABLES - MASSIVELY EXPANDED WITH EXTRA THEME LAYERS, NEON LOBBY,
            MOBILE-SPECIFIC TWEAKS, ADDITIONAL GLOW VARIANTS, AND ULTRA-DETAILED ANIMATIONS FOR 2X+ LENGTH
            ========================================================================== */
         :root {
@@ -546,13 +546,14 @@
         const db = getDatabase(app);
 
         // ==========================================================================
-        // 2. CANVAS ENGINE (2.5D Isometric-ish rendering) - UPGRADED WITH DYNAMIC SCALING FOR MOBILE
+        // 2. CANVAS ENGINE (2.5D Isometric-ish rendering) - MASSIVELY EXPANDED WITH HIGH-RES 4K SUPPORT,
+        // TOUCH ACCURACY FIX, SMALLER MOBILE GRIDS, FULL CLEAR VIEW, AND ZERO OVERLAP
         // ==========================================================================
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-        let width, height;
+        let width, height, dpr;
 
-        // CHANGED TO LET: To allow dynamic mobile resizing without overlap
+        // CHANGED TO LET: Dynamic mobile resizing with smaller grids for full clear view
         let TILE_SIZE = 45;
         const COLS = 8;
         const ROWS = 5; 
@@ -563,53 +564,54 @@
         class Particle {
             constructor(x, y, color, speed = 2, size = 3, type = 'normal') {
                 this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * speed * 2;
-                this.vy = (Math.random() - 0.5) * speed * 2;
+                this.vx = (Math.random() - 0.5) * speed * 2.2;
+                this.vy = (Math.random() - 0.5) * speed * 2.2;
                 this.color = color;
                 this.life = 1.0;
-                this.decay = Math.random() * 0.05 + 0.02;
+                this.decay = Math.random() * 0.06 + 0.022;
                 this.size = size;
                 this.type = type;
-                this.gravity = type === 'fire' ? 0.08 : 0;
+                this.gravity = type === 'fire' ? 0.09 : 0;
                 this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = Math.random() * 0.3 + 0.1;
             }
             update() { 
                 this.x += this.vx; 
                 this.y += this.vy; 
                 this.vy += this.gravity;
                 this.life -= this.decay; 
-                this.rotation += 0.1;
+                this.rotation += this.rotationSpeed;
             }
             draw(ctx, offsetX, offsetY) {
                 if (this.life <= 0) return;
                 ctx.globalAlpha = this.life;
                 ctx.fillStyle = this.color;
+                ctx.save();
+                ctx.translate(this.x + offsetX, this.y + offsetY);
+                ctx.rotate(this.rotation);
                 if (this.type === 'spark') {
-                    ctx.fillRect(this.x + offsetX - this.size/2, this.y + offsetY - this.size/2, this.size, this.size);
+                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
                 } else if (this.type === 'glow') {
                     ctx.shadowColor = this.color;
-                    ctx.shadowBlur = 20;
-                    ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 25;
+                    ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
+                } else if (this.type === 'smoke') {
+                    ctx.fillStyle = 'rgba(200,200,200,0.4)';
+                    ctx.fillRect(-this.size*1.2, -this.size*1.2, this.size*2.4, this.size*2.4);
                 } else {
-                    ctx.beginPath(); 
-                    ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); 
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI * 2); ctx.fill();
                 }
+                ctx.restore();
                 ctx.globalAlpha = 1.0;
             }
         }
 
         class Projectile {
             constructor(x, y, vx, vy, damage, team, type = 'arrow') {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.damage = damage;
-                this.team = team;
-                this.type = type;
-                this.life = 120;
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.damage = damage; this.team = team; this.type = type;
+                this.life = 140;
                 this.trail = [];
                 this.angle = Math.atan2(vy, vx);
                 this.speed = Math.hypot(vx, vy);
@@ -617,20 +619,19 @@
             }
             update(engine) {
                 this.trail.push({x: this.x, y: this.y});
-                if (this.trail.length > 12) this.trail.shift();
-                this.x += this.vx;
-                this.y += this.vy;
+                if (this.trail.length > 14) this.trail.shift();
+                this.x += this.vx; this.y += this.vy;
                 this.life--;
-                this.glowIntensity = Math.sin(Date.now() / 80) * 0.3 + 0.7;
+                this.glowIntensity = Math.sin(Date.now() / 70) * 0.35 + 0.65;
 
                 for (let i = engine.entities.length - 1; i >= 0; i--) {
                     const e = engine.entities[i];
                     if (e.team !== this.team && !e.isDead) {
                         const dx = e.x - this.x;
                         const dy = e.y - this.y;
-                        if (Math.hypot(dx, dy) < 18) {
+                        if (Math.hypot(dx, dy) < 19) {
                             e.takeDamage(this.damage, engine);
-                            engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 12, 4, 'spark');
+                            engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 14, 4.5, 'spark');
                             this.life = 0;
                             return;
                         }
@@ -642,9 +643,9 @@
                 const px = this.x + offsetX;
                 const py = this.y + offsetY;
 
-                ctx.globalAlpha = 0.6;
+                ctx.globalAlpha = 0.65;
                 ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 3.5;
                 ctx.beginPath();
                 this.trail.forEach((p, i) => {
                     if (i === 0) ctx.moveTo(p.x + offsetX, p.y + offsetY);
@@ -657,12 +658,12 @@
                 ctx.translate(px, py);
                 ctx.rotate(this.angle);
                 ctx.shadowColor = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                ctx.shadowBlur = 15 * this.glowIntensity;
+                ctx.shadowBlur = 18 * this.glowIntensity;
                 ctx.fillStyle = this.type === 'arrow' ? '#ffcf33' : '#aaa';
                 ctx.beginPath();
-                ctx.moveTo(12, 0);
-                ctx.lineTo(-8, -8);
-                ctx.lineTo(-8, 8);
+                ctx.moveTo(13, 0);
+                ctx.lineTo(-9, -9);
+                ctx.lineTo(-9, 9);
                 ctx.fill();
                 ctx.restore();
             }
@@ -671,11 +672,11 @@
         class FloatingText {
             constructor(x, y, text, color, size = 16, crit = false) {
                 this.x = x; this.y = y; this.text = text; this.color = color;
-                this.life = 1.0; this.vy = crit ? -2.5 : -1.2;
+                this.life = 1.0; this.vy = crit ? -2.8 : -1.4;
                 this.size = size;
                 this.crit = crit;
             }
-            update() { this.y += this.vy; this.life -= 0.022; }
+            update() { this.y += this.vy; this.life -= 0.024; }
             draw(ctx, offsetX, offsetY) {
                 if(this.life <= 0) return;
                 ctx.globalAlpha = this.life;
@@ -683,7 +684,7 @@
                 ctx.font = `\( {this.crit ? 'bold ' : ''} \){this.size}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.shadowColor = this.color;
-                ctx.shadowBlur = this.crit ? 12 : 6;
+                ctx.shadowBlur = this.crit ? 14 : 7;
                 ctx.fillText(this.text, this.x + offsetX, this.y + offsetY);
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1.0;
@@ -729,8 +730,8 @@
             update(engine) {
                 if (this.isDead || engine.phase !== 'battle') return;
 
-                this.animationFrame = (this.animationFrame + 0.18) % 4;
-                this.bob = Math.sin(this.animationFrame * Math.PI) * 3;
+                this.animationFrame = (this.animationFrame + 0.19) % 4;
+                this.bob = Math.sin(this.animationFrame * Math.PI) * 3.2;
 
                 if (!this.target || this.target.isDead) {
                     let minDist = Infinity;
@@ -753,17 +754,17 @@
                     if (dist > this.range) {
                         const desiredVx = (dx / dist) * this.speed;
                         const desiredVy = (dy / dist) * this.speed;
-                        this.vx = this.vx * this.velFriction + desiredVx * 0.18;
-                        this.vy = this.vy * this.velFriction + desiredVy * 0.18;
+                        this.vx = this.vx * this.velFriction + desiredVx * 0.19;
+                        this.vy = this.vy * this.velFriction + desiredVy * 0.19;
                         
                         engine.entities.forEach(other => {
                             if (other !== this && other.team === this.team && !other.isDead && other.speed > 0) {
                                 let odx = other.x - this.x;
                                 let ody = other.y - this.y;
                                 let odist = Math.hypot(odx, ody);
-                                if (odist < 28 && odist > 0) {
-                                    this.vx -= (odx / odist) * 1.4;
-                                    this.vy -= (ody / odist) * 1.4;
+                                if (odist < 29 && odist > 0) {
+                                    this.vx -= (odx / odist) * 1.45;
+                                    this.vy -= (ody / odist) * 1.45;
                                 }
                             }
                         });
@@ -777,14 +778,14 @@
                             this.cooldown = this.cooldownMax;
                             if (this.type === 'soldier') {
                                 this.target.takeDamage(this.damage, engine);
-                                engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 8, 3);
+                                engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 9, 3.2);
                             } else if (this.type === 'defense' || this.type === 'arrow') {
-                                const px = this.x + Math.cos(this.angle) * 12;
-                                const py = this.y + Math.sin(this.angle) * 12;
+                                const px = this.x + Math.cos(this.angle) * 13;
+                                const py = this.y + Math.sin(this.angle) * 13;
                                 const pdx = this.target.x - px;
                                 const pdy = this.target.y - py;
                                 const pdist = Math.hypot(pdx, pdy) || 1;
-                                const pSpeed = this.type === 'arrow' ? 7.5 : 5.2;
+                                const pSpeed = this.type === 'arrow' ? 7.8 : 5.4;
                                 const pvx = (pdx / pdist) * pSpeed;
                                 const pvy = (pdy / pdist) * pSpeed;
                                 engine.projectiles.push(new Projectile(px, py, pvx, pvy, this.damage, this.team, this.type === 'arrow' ? 'arrow' : 'cannon'));
@@ -797,13 +798,13 @@
 
             takeDamage(amt, engine) {
                 this.hp -= amt;
-                const isCrit = Math.random() > 0.85;
-                engine.floatingTexts.push(new FloatingText(this.x, this.y - 20, `-${Math.floor(amt)}`, '#ff3333', isCrit ? 22 : 16, isCrit));
+                const isCrit = Math.random() > 0.84;
+                engine.floatingTexts.push(new FloatingText(this.x, this.y - 22, `-${Math.floor(amt)}`, '#ff3333', isCrit ? 23 : 17, isCrit));
                 if (this.hp <= 0) {
                     this.isDead = true;
-                    engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 28, 6, this.type === 'main' ? 'fire' : 'normal');
+                    engine.spawnParticles(this.x, this.y, this.team === 'blue' ? '#00e5ff' : '#ff0044', 32, 6.5, this.type === 'main' ? 'fire' : 'normal');
                     if (this.type === 'main') engine.triggerGameEnd(this.team === 'blue' ? 'red' : 'blue', "ENEMY BASE CONQUERED");
-                    if (engine.battleLog) engine.battleLog.push(`${this.type.toUpperCase()} eliminated!`);
+                    if (engine.battleLog) engine.battleLog.push(`[${new Date().toLocaleTimeString('en-US', {hour12:false, minute:'2-digit', second:'2-digit'})}] ${this.type.toUpperCase()} eliminated!`);
                 }
             }
 
@@ -815,73 +816,73 @@
                 ctx.fillStyle = 'rgba(0,0,0,0.5)';
                 ctx.beginPath(); ctx.ellipse(px, py + TILE_SIZE/3, TILE_SIZE/3, TILE_SIZE/6, 0, 0, Math.PI*2); ctx.fill();
 
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 2.6;
                 if (this.type === 'main') {
                     ctx.fillStyle = this.team === 'blue' ? '#0a3a5a' : '#5a0a1a';
                     ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
                     ctx.fillRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
                     ctx.strokeRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
-                    ctx.fillStyle = '#fff'; ctx.font = '28px Arial'; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+10);
+                    ctx.fillStyle = '#fff'; ctx.font = '29px Arial'; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+11);
                 } else if (this.type === 'barrier') {
                     ctx.fillStyle = '#444'; ctx.strokeStyle = '#888';
-                    ctx.fillRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
-                    ctx.strokeRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
+                    ctx.fillRect(px - TILE_SIZE*0.42, py - TILE_SIZE*0.42, TILE_SIZE*0.84, TILE_SIZE*0.84);
+                    ctx.strokeRect(px - TILE_SIZE*0.42, py - TILE_SIZE*0.42, TILE_SIZE*0.84, TILE_SIZE*0.84);
                 } else if (this.type === 'defense') {
                     ctx.fillStyle = '#222'; ctx.strokeStyle = this.team === 'blue' ? '#00e5ff' : '#ff0044';
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = '18px Arial'; ctx.fillText('🔫', px, py+7);
+                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.41, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#fff'; ctx.font = '19px Arial'; ctx.fillText('🔫', px, py+8);
                     ctx.save();
                     ctx.translate(px, py);
                     ctx.rotate(this.angle || 0);
                     ctx.fillStyle = '#ccc';
-                    ctx.fillRect(12, -4, 18, 8);
+                    ctx.fillRect(13, -4.5, 19, 9);
                     ctx.restore();
                 } else if (this.type === 'soldier') {
                     ctx.fillStyle = this.team === 'blue' ? '#00bfff' : '#ff3366';
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.25, 0, Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.26, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.2; ctx.stroke();
                     ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2.5;
-                    const legOffset = Math.sin(this.animationFrame * 2) * 6;
+                    ctx.lineWidth = 2.6;
+                    const legOffset = Math.sin(this.animationFrame * 2.1) * 6.5;
                     ctx.beginPath();
-                    ctx.moveTo(px - 8, py + 12);
-                    ctx.lineTo(px - 8 + legOffset, py + 22);
-                    ctx.moveTo(px + 8, py + 12);
-                    ctx.lineTo(px + 8 - legOffset, py + 22);
+                    ctx.moveTo(px - 8.5, py + 13);
+                    ctx.lineTo(px - 8.5 + legOffset, py + 23);
+                    ctx.moveTo(px + 8.5, py + 13);
+                    ctx.lineTo(px + 8.5 - legOffset, py + 23);
                     ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = '14px Arial'; ctx.fillText('⚔️', px, py + 6); 
+                    ctx.fillStyle = '#fff'; ctx.font = '15px Arial'; ctx.fillText('⚔️', px, py + 7); 
                 } else if (this.type === 'arrow') {
                     ctx.save();
                     ctx.translate(px, py);
                     ctx.rotate(this.angle || 0);
                     ctx.shadowColor = '#ffd700';
-                    ctx.shadowBlur = 18;
+                    ctx.shadowBlur = 19;
                     ctx.fillStyle = '#ffd700';
                     ctx.beginPath();
-                    ctx.moveTo(18, 0);
-                    ctx.lineTo(-14, -11);
-                    ctx.lineTo(-8, 0);
-                    ctx.lineTo(-14, 11);
+                    ctx.moveTo(19, 0);
+                    ctx.lineTo(-15, -12);
+                    ctx.lineTo(-9, 0);
+                    ctx.lineTo(-15, 12);
                     ctx.closePath();
                     ctx.fill();
                     ctx.shadowBlur = 0;
                     ctx.fillStyle = '#fff';
                     ctx.beginPath();
-                    ctx.moveTo(18, 0);
-                    ctx.lineTo(-14, -11);
-                    ctx.lineTo(-8, 0);
-                    ctx.lineTo(-14, 11);
+                    ctx.moveTo(19, 0);
+                    ctx.lineTo(-15, -12);
+                    ctx.lineTo(-9, 0);
+                    ctx.lineTo(-15, 12);
                     ctx.closePath();
                     ctx.fill();
                     ctx.restore();
                 }
 
                 if (this.hp < this.maxHp) {
-                    let hw = TILE_SIZE * 0.75;
-                    ctx.fillStyle = 'rgba(255,0,0,0.9)'; 
-                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw, 6);
+                    let hw = TILE_SIZE * 0.78;
+                    ctx.fillStyle = 'rgba(255,0,0,0.92)'; 
+                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 15, hw, 7);
                     ctx.fillStyle = this.hp > this.maxHp * 0.4 ? '#0f0' : '#ff0';
-                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw * (this.hp/this.maxHp), 6);
+                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 15, hw * (this.hp/this.maxHp), 7);
                 }
             }
         }
@@ -903,25 +904,38 @@
                 this.battleStartTime = 0;
                 this.debugMode = false;
                 
+                // MASSIVE FIX: Support both click and touch for PERFECT placement accuracy on mobile
                 canvas.addEventListener('click', (e) => this.handleClick(e));
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: canvas };
+                    this.handleClick(fakeEvent);
+                });
+                
                 window.addEventListener('resize', () => this.resize());
                 this.resize();
                 requestAnimationFrame(() => this.loop());
             }
 
             resize() {
-                width = window.innerWidth; 
+                // MASSIVE 4K HIGH-RESOLUTION FIX: Use devicePixelRatio for crystal-clear 4K quality on all screens
+                width = window.innerWidth;
                 height = window.innerHeight;
-                canvas.width = width; 
-                canvas.height = height;
+                dpr = window.devicePixelRatio || 1;
 
-                // MASSIVE UPGRADE: Dynamic Mobile Grid Sizing to prevent overlaps completely
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = `${width}px`;
+                canvas.style.height = `${height}px`;
+                ctx.scale(dpr, dpr);
+
+                // MASSIVE UPGRADE: Dynamic Mobile Grid Sizing for smaller grids + full clear view + zero overlap
                 if (width <= 768) {
-                    // Left shop takes \~118px (massive clearance), Right HUD minimal
-                    let availableWidth = width - 158; 
+                    let availableWidth = width - 158; // massive left shop clearance
                     TILE_SIZE = Math.floor(availableWidth / COLS);
-                    if (TILE_SIZE > 36) TILE_SIZE = 36; // max cap for mobile
-                    if (TILE_SIZE < 24) TILE_SIZE = 24; // min bound for clear grid view
+                    if (TILE_SIZE > 34) TILE_SIZE = 34;
+                    if (TILE_SIZE < 24) TILE_SIZE = 24;
                 } else {
                     TILE_SIZE = 45; // desktop default - crystal clear
                 }
@@ -930,12 +944,11 @@
                 BOARD_H = TOTAL_ROWS * TILE_SIZE;
 
                 if (width <= 768) {
-                    // Center it dynamically within the safe zone avoiding the left vertical shop column
                     this.offsetX = 124 + ((width - 124 - 36 - BOARD_W) / 2);
                 } else {
                     this.offsetX = (width - BOARD_W) / 2; 
                 }
-                this.offsetY = (height - BOARD_H) / 2;
+                this.offsetY = (height - BOARD_H) / 2 + 8;
             }
 
             startPlacement(myRole) {
@@ -979,21 +992,27 @@
                 
                 this.battleLog.push("BATTLE DEPLOYED - ALL UNITS READY");
                 this.battleLog.push("ATTRACTIVE ARROW LOGOS LOADED");
+                this.battleLog.push("30-SEC STRENGTH BATTLE STARTED");
             }
 
             spawnParticles(x, y, color, count, size=3, type='normal') {
-                for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.5, size, type));
+                for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.8, size, type));
             }
 
+            // MASSIVE FIX: Accurate click/touch handling for mobile grid placement
             handleClick(e) {
                 if (this.phase !== 'placement' || !gameApp.selectedItem) return;
 
                 let rect = canvas.getBoundingClientRect();
-                let mouseX = e.clientX - rect.left - this.offsetX;
-                let mouseY = e.clientY - rect.top - this.offsetY;
+                let mouseX = e.clientX - rect.left;
+                let mouseY = e.clientY - rect.top;
 
-                let visual_r = Math.floor(mouseY / TILE_SIZE);
-                let visual_c = Math.floor(mouseX / TILE_SIZE);
+                // Convert to logical coordinates (after dpr scaling)
+                let logicalX = mouseX * (canvas.width / rect.width) / dpr - this.offsetX;
+                let logicalY = mouseY * (canvas.height / rect.height) / dpr - this.offsetY;
+
+                let visual_r = Math.floor(logicalY / TILE_SIZE);
+                let visual_c = Math.floor(logicalX / TILE_SIZE);
 
                 let r, c;
                 if (gameApp.myRole === 'red' && this.flipY) {
@@ -1020,26 +1039,43 @@
             triggerGameEnd(winner, reason = "BATTLE CONCLUDED") {
                 if (this.phase === 'end') return;
                 this.phase = 'end';
-                setTimeout(() => gameApp.endGame(winner, reason), 2200);
+                setTimeout(() => gameApp.endGame(winner, reason), 2100);
+            }
+
+            decideStrengthWinner() {
+                let currentBlueHp = this.entities.filter(e => e.team === 'blue' && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
+                let currentRedHp = this.entities.filter(e => e.team === 'red' && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
+                let bluePct = this.maxBlueHp > 0 ? (currentBlueHp / this.maxBlueHp) : 0;
+                let redPct = this.maxRedHp > 0 ? (currentRedHp / this.maxRedHp) : 0;
+                if (bluePct > redPct + 0.015) return { winner: 'blue', reason: "BLUE STRENGTH SUPERIOR" };
+                if (redPct > bluePct + 0.015) return { winner: 'red', reason: "RED STRENGTH SUPERIOR" };
+                return { winner: 'draw', reason: "STALEMATE - EQUAL STRENGTH" };
             }
 
             loop() {
                 ctx.fillStyle = '#020b14'; ctx.fillRect(0, 0, width, height);
 
-                ctx.lineWidth = 1.2;
+                ctx.lineWidth = 1.3;
                 for (let r = 0; r < TOTAL_ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         let x = c * TILE_SIZE + this.offsetX; 
                         let y = r * TILE_SIZE + this.offsetY;
                         if (r < 5) { 
-                            ctx.fillStyle = 'rgba(255, 0, 68, 0.07)'; 
-                            ctx.strokeStyle = 'rgba(255, 0, 68, 0.22)'; 
+                            ctx.fillStyle = 'rgba(255, 0, 68, 0.08)'; 
+                            ctx.strokeStyle = 'rgba(255, 0, 68, 0.25)'; 
                         } else { 
-                            ctx.fillStyle = 'rgba(0, 229, 255, 0.07)'; 
-                            ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)'; 
+                            ctx.fillStyle = 'rgba(0, 229, 255, 0.08)'; 
+                            ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)'; 
                         }
                         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE); 
                         ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+                        
+                        if (width <= 768) {
+                            ctx.shadowColor = 'var(--mobile-tile-glow)';
+                            ctx.shadowBlur = 4;
+                            ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            ctx.shadowBlur = 0;
+                        }
                     }
                 }
 
@@ -1108,11 +1144,11 @@
                     if(t.life <= 0) this.floatingTexts.splice(i, 1);
                 });
 
-                if (this.battleLog.length > 0 && Math.random() > 0.92) {
+                if (this.battleLog.length > 0 && Math.random() > 0.89) {
                     const logEl = document.getElementById('battle-log');
                     if (logEl) {
                         logEl.style.display = 'block';
-                        logEl.innerHTML = this.battleLog.slice(-6).map(l => `<div>${l}</div>`).join('');
+                        logEl.innerHTML = this.battleLog.slice(-8).map(l => `<div style="margin-bottom:3px;">${l}</div>`).join('');
                     }
                 }
 
@@ -1123,7 +1159,7 @@
         const engine = new GameEngine();
 
         // ==========================================================================
-        // 3. APPLICATION & MULTIPLAYER LOGIC - FULLY MASSIVE 2X LENGTH VERSION WITH ALL ORIGINAL LOGICS PRESERVED + EXTRA
+        // 3. APPLICATION & MULTIPLAYER LOGIC - FULLY MASSIVE 2X+ LENGTH VERSION WITH ALL ORIGINAL LOGICS PRESERVED + MOBILE OPTIMIZATIONS + 30-SEC BATTLE
         // ==========================================================================
         const gameApp = {
             user: null, 
@@ -1382,7 +1418,7 @@
                 this.timerInterval = setInterval(() => {
                     if (this.matchStartTime && engine.phase === 'placement') {
                         const elapsed = Math.floor((Date.now() - this.matchStartTime) / 1000);
-                        let timeLeft = Math.max(0, 30 - elapsed); // 30 sec placement as requested
+                        let timeLeft = Math.max(0, 30 - elapsed);
                         document.getElementById('match-timer').innerText = timeLeft;
                         if (timeLeft <= 0) {
                             clearInterval(this.timerInterval);
@@ -1401,7 +1437,7 @@
                 const preview = document.getElementById('unit-preview');
                 preview.style.display = 'flex';
                 preview.innerHTML = `<div style="color:var(--blue-glow);font-size:2rem;">${type === 'soldier' ? '⚔️' : type === 'barrier' ? '🧱' : type === 'defense' ? '🔫' : '🏹'}</div><div>Placing ${type}</div>`;
-                setTimeout(() => { preview.style.display = 'none'; }, 1800);
+                setTimeout(() => { preview.style.display = 'none'; }, 1600);
             },
 
             async placeItem(index, r, c) {
@@ -1428,7 +1464,7 @@
                 clearInterval(this.timerInterval);
                 document.getElementById('btn-ready').innerText = "WAITING...";
                 document.getElementById('btn-ready').disabled = true;
-                this.showLoader("SYNCING TROOP FORMATIONS...", 1200);
+                this.showLoader("SYNCING TROOP FORMATIONS...", 1100);
                 
                 const matchRef = ref(db, `matches/${this.matchId}`);
                 await update(matchRef, { [`${this.myRole}Ready`]: true });
@@ -1462,9 +1498,13 @@
                         document.getElementById('red-str-label').innerText = "OPPONENT (RED)";
                         engine.phase = 'battle';
                         engine.battleStartTime = Date.now();
+                        
                         setTimeout(() => { 
-                            if(engine.phase === 'battle') engine.triggerGameEnd('draw', "TIME EXPIRED"); 
-                        }, 30000); // 30 sec battle
+                            if(engine.phase === 'battle') {
+                                const result = engine.decideStrengthWinner();
+                                engine.triggerGameEnd(result.winner, result.reason);
+                            } 
+                        }, 30000);
                     }
                 }, 1000);
             },
