@@ -1,1434 +1,1676 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTIMATE CLASH: AUTO-BATTLER</title>
-    <style>
-        /* ==========================================================================
-           GLOBAL & VARIABLES
-           ========================================================================== */
-        :root {
-            --blue-glow: #00e5ff;
-            --blue-bg: #0a203a;
-            --red-glow: #ff0044;
-            --red-bg: #3a0a14;
-            --gold: #ffcf33;
-            --dark-bg: #020b14;
-            --panel-bg: rgba(5, 24, 41, 0.95);
-            --glass-border: rgba(0, 229, 255, 0.3);
-            --accent-green: #00ff88;
-            --arrow-glow: #ffd700;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>❄️ FROZEN CLASH — ICE KINGDOM Wars</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ice1:#a8e6ff;--ice2:#c9f0ff;--ice3:#e8f9ff;--snow:#ffffff;
+  --deep:#1a4a7a;--mid:#2a6bb0;--sky-top:#0d2a5c;--sky-mid:#1a4080;--sky-low:#3a8fc0;
+  --gold:#ffe066;--gold2:#ffb800;--mint:#7fffd4;--coral:#ff7eb3;--lav:#c8a8ff;
+  --panel-snow:rgba(255,255,255,0.93);--border-ice:rgba(100,180,255,0.45);
+  --red-w:#ff6b6b;--green-y:#5de8a8;
+  --font-d:'Fredoka One',cursive;--font-b:'Nunito',sans-serif;
+  --r:18px;--r-sm:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font-b);}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
-        
-        body {
-            background: var(--dark-bg);
-            color: white;
-            overflow: hidden;
-            width: 100vw; height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-        }
+/* SKY */
+#sky{
+  position:fixed;inset:0;z-index:0;
+  background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 35%,var(--sky-low) 65%,#5ab8e0 80%,#8dd8f0 100%);
+}
+#sky::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 30% at 20% 25%,rgba(100,255,200,0.28),transparent),
+             radial-gradient(ellipse 60% 22% at 76% 18%,rgba(160,120,255,0.22),transparent);
+  animation:aurShift 9s ease-in-out infinite alternate;
+}
+@keyframes aurShift{0%{transform:scaleX(1);}100%{transform:scaleX(1.18) translateX(4%);}}
 
-        /* ==========================================================================
-           LOADERS & PREVENTIONS
-           ========================================================================== */
-        #global-loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 11, 20, 0.85);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            z-index: 9999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        #global-loader.active { opacity: 1; pointer-events: all; }
-        
-        .spinner {
-            width: 80px; height: 80px;
-            border: 8px solid rgba(0, 229, 255, 0.1);
-            border-top: 8px solid var(--blue-glow);
-            border-radius: 50%;
-            animation: spin 1s linear infinite, pulseGlow 2s infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px var(--blue-glow); } 50% { box-shadow: 0 0 50px var(--blue-glow); } }
+/* MOUNTAINS SVG */
+#mts{position:fixed;bottom:0;left:0;width:100%;z-index:1;pointer-events:none;}
 
-        #loading-text { margin-top: 20px; font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; color: var(--blue-glow); text-shadow: 0 0 10px var(--blue-glow); text-align: center; }
-        #loading-subtext { font-size: 1rem; color: #aaa; margin-top: 10px; animation: loadingPulse 1.5s infinite; }
-        @keyframes loadingPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+/* SNOW GROUND */
+#sground{
+  position:fixed;bottom:0;left:0;width:100%;height:clamp(55px,9vw,95px);z-index:2;pointer-events:none;
+  background:linear-gradient(to top,#fff 0%,rgba(225,248,255,0.95) 55%,transparent 100%);
+  border-radius:80% 80% 0 0/28px 28px 0 0;
+}
 
-        /* ==========================================================================
-           UI COMPONENTS & BUTTONS
-           ========================================================================== */
-        .screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 10;
-        }
-        .screen.active { display: flex; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+/* STARS */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 
-        /* LOBBY BACKGROUND UPDATE */
-        #screen-lobby {
-            background: linear-gradient(rgba(2, 11, 20, 0.88), rgba(10, 0, 20, 0.95)), 
-                        url('https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat;
-        }
+/* SNOW CANVAS */
+#snowc{position:fixed;inset:0;z-index:3;pointer-events:none;}
 
-        .panel-3d {
-            background: var(--panel-bg);
-            border: 2px solid var(--glass-border);
-            border-radius: 20px; padding: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 229, 255, 0.1);
-            transform-style: preserve-3d; transform: perspective(1000px) rotateX(2deg);
-            text-align: center; width: 90%; max-width: 500px;
-            transition: all 0.3s ease;
-        }
+/* LOADER */
+#loader{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(180deg,#0d2a5c,#1a4080,#3a8fc0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity 0.8s,visibility 0.8s;
+}
+#loader.hide{opacity:0;visibility:hidden;}
+.ld-icon{font-size:clamp(4rem,12vw,7rem);animation:yJump 1s ease-in-out infinite;}
+@keyframes yJump{0%,100%{transform:translateY(0);}50%{transform:translateY(-18px) scale(1.08);}}
+.ld-title{font-family:var(--font-d);font-size:clamp(1.8rem,5vw,3rem);color:var(--ice1);margin-top:14px;letter-spacing:2px;text-shadow:0 0 20px rgba(168,230,255,0.8);animation:tPulse 2s ease-in-out infinite;}
+@keyframes tPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+.ld-wrap{margin-top:22px;width:min(280px,70vw);height:18px;background:rgba(255,255,255,0.15);border-radius:18px;border:2px solid rgba(168,230,255,0.35);overflow:hidden;}
+.ld-bar{height:100%;border-radius:18px;background:linear-gradient(90deg,var(--ice1),var(--mint),var(--ice1));background-size:200% 100%;animation:lFill 2.5s ease forwards,shimmer 1.5s linear infinite;}
+@keyframes lFill{from{width:0}to{width:100%}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ld-tip{margin-top:12px;font-family:var(--font-b);font-size:clamp(0.7rem,2vw,0.9rem);color:rgba(168,230,255,0.8);font-weight:700;animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:0.4;}50%{opacity:1;}}
 
-        .input-field {
-            width: 100%; padding: 15px; margin: 10px 0;
-            background: rgba(0,0,0,0.5); border: 1px solid #1a3a5a;
-            color: white; border-radius: 8px; font-size: 1.1rem;
-            text-align: center; transition: all 0.3s;
-        }
-        .input-field:focus { outline: none; border-color: var(--blue-glow); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
+/* SCREENS */
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+.screen.active{display:flex;animation:sPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+@keyframes sPop{from{opacity:0;transform:scale(0.9) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);}}
 
-        .btn-clash {
-            width: 100%; padding: 16px; margin-top: 20px;
-            background: linear-gradient(to bottom, #00bfff, #0088cc);
-            border: none; border-radius: 10px; color: white;
-            font-size: 1.2rem; font-weight: bold; text-transform: uppercase;
-            cursor: pointer; box-shadow: 0 6px 0 #005580, 0 15px 20px rgba(0,0,0,0.4);
-            transition: all 0.1s; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        .btn-clash:active { transform: translateY(6px); box-shadow: 0 0px 0 #005580, 0 5px 10px rgba(0,0,0,0.4); }
-        .btn-clash.red { background: linear-gradient(to bottom, #ff3366, #cc0033); box-shadow: 0 6px 0 #800020; }
-        .btn-clash.red:active { box-shadow: 0 0px 0 #800020; }
-        .btn-clash.gray { background: linear-gradient(to bottom, #666, #444); box-shadow: 0 6px 0 #222; }
-        .btn-clash.gray:active { box-shadow: 0 0px 0 #222; }
-        .btn-clash.gold { background: linear-gradient(to bottom, #ffcf33, #e6b800); box-shadow: 0 6px 0 #b38f00; color: #000; text-shadow: none; }
-        .btn-clash.gold:active { box-shadow: 0 0px 0 #b38f00; }
-        .btn-clash.glow { box-shadow: 0 0 25px var(--accent-green); }
+/* ICE PANEL */
+.ice-panel{
+  background:var(--panel-snow);border:3px solid var(--border-ice);border-radius:26px;
+  padding:clamp(18px,4vw,36px);position:relative;overflow:hidden;width:min(430px,94vw);
+  box-shadow:0 20px 60px rgba(30,80,180,0.22),0 0 0 1px rgba(255,255,255,0.8),inset 0 2px 0 rgba(255,255,255,0.95);
+}
+.ice-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--lav),var(--ice1),var(--mint),var(--ice1),var(--lav));background-size:200% 100%;animation:shimmer 2s linear infinite;}
+.ice-panel::after{content:'❄';position:absolute;top:12px;right:14px;font-size:1.4rem;opacity:0.25;animation:cSpin 7s linear infinite;}
+@keyframes cSpin{to{transform:rotate(360deg);}}
+.panel-deco{position:absolute;opacity:0.1;font-size:6rem;bottom:-10px;left:-10px;animation:cSpin 22s linear infinite reverse;pointer-events:none;}
 
-        /* ==========================================================================
-           LOBBY HUD & MODALS
-           ========================================================================== */
-        .top-bar {
-            position: absolute; top: 0; left: 0; width: 100%; padding: 15px 30px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-            display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; pointer-events: none;
-        }
-        .stat-box {
-            background: rgba(0,0,0,0.6); border: 2px solid var(--gold); border-radius: 30px;
-            padding: 5px 20px 5px 5px; display: flex; align-items: center; gap: 10px;
-            font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 15px rgba(255, 207, 51, 0.3); pointer-events: all; cursor: default;
-        }
-        .stat-icon { width: 35px; height: 35px; background: var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; animation: statPulse 2s infinite; }
+/* MASCOT */
+.mascot-wrap{text-align:center;margin-bottom:-18px;position:relative;z-index:2;}
+.mascot-icon{font-size:clamp(3.5rem,10vw,5.5rem);display:inline-block;animation:mWiggle 2s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(0,80,200,0.3));}
+@keyframes mWiggle{0%,100%{transform:rotate(-5deg);}50%{transform:rotate(5deg) scale(1.06);}}
+.mascot-bubble{position:absolute;top:-16px;right:-8px;background:var(--gold);color:#5a3a00;font-family:var(--font-b);font-weight:900;font-size:0.72rem;padding:5px 11px;border-radius:18px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:bBounce 2s ease-in-out infinite;}
+.mascot-bubble::after{content:'';position:absolute;bottom:-7px;left:18px;border:7px solid transparent;border-top-color:var(--gold);border-bottom:0;}
+@keyframes bBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
 
-        .profile-btn { cursor: pointer; transition: all 0.2s; border-color: #fff !important; }
-        .profile-btn:hover { background: rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); transform: scale(1.05); }
+/* TITLES */
+.auth-title{font-family:var(--font-d);font-size:clamp(1.8rem,5vw,2.8rem);color:var(--deep);text-align:center;line-height:1.1;text-shadow:0 2px 0 rgba(255,255,255,0.9);}
+.auth-sub{font-size:clamp(0.75rem,2vw,0.95rem);color:var(--mid);font-weight:700;text-align:center;margin-bottom:20px;letter-spacing:1px;}
 
-        .vs-banner {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 20px; align-items: center; font-size: 1.2rem; font-weight: bold;
-            background: rgba(0,0,0,0.7); padding: 5px 20px; border-radius: 20px; border: 1px solid #444;
-        }
-        .vs-text { color: var(--gold); font-size: 1.5rem; text-shadow: 0 0 10px var(--gold); animation: vsShake 1.5s infinite; }
-        .blue-player { color: var(--blue-glow); }
-        .red-player { color: var(--red-glow); }
+/* TABS */
+.tabs{display:flex;gap:7px;margin-bottom:20px;background:rgba(168,210,255,0.18);border-radius:16px;padding:5px;}
+.tab{flex:1;padding:10px 8px;border:none;background:transparent;font-family:var(--font-b);font-weight:800;font-size:clamp(0.7rem,2vw,0.85rem);color:var(--mid);border-radius:12px;cursor:pointer;transition:all 0.22s;}
+.tab.active{background:linear-gradient(135deg,var(--deep),var(--mid));color:#fff;box-shadow:0 4px 12px rgba(30,80,160,0.3);transform:scale(1.02);}
 
-        /* MODALS */
-        .custom-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px); z-index: 5000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-        }
-        .custom-modal-overlay.active { opacity: 1; pointer-events: all; display: flex; }
-        
-        .modal-content {
-            background: rgba(10, 20, 30, 0.95); border: 2px solid var(--blue-glow); border-radius: 15px;
-            padding: 30px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; flex-direction: column; max-height: 85vh;
-        }
-        .custom-modal-overlay.active .modal-content { transform: scale(1); }
-        
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: #aaa; cursor: pointer; transition: color 0.2s; }
-        .close-btn:hover { color: #fff; }
+/* INPUTS */
+.field{position:relative;margin-bottom:13px;}
+.field-em{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:1.15rem;pointer-events:none;}
+.field-lbl{position:absolute;top:-9px;left:11px;font-family:var(--font-b);font-weight:800;font-size:0.6rem;letter-spacing:1.5px;color:var(--mid);background:white;padding:0 5px;border-radius:4px;}
+.ice-input{
+  width:100%;padding:13px 13px 13px 42px;background:rgba(200,235,255,0.35);
+  border:2.5px solid rgba(100,180,255,0.3);border-radius:14px;
+  font-family:var(--font-b);font-size:clamp(0.9rem,2.5vw,1rem);font-weight:700;color:var(--deep);
+  transition:all 0.22s;outline:none;-webkit-appearance:none;
+}
+.ice-input::placeholder{color:rgba(60,120,180,0.5);}
+.ice-input:focus{border-color:var(--mid);background:rgba(220,245,255,0.7);box-shadow:0 0 0 4px rgba(100,160,255,0.12);transform:scale(1.01);}
 
-        /* LEADERBOARD STYLES */
-        .rank-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-        .rank-tab {
-            background: rgba(0,0,0,0.6); border: 1px solid #444; color: #aaa; padding: 10px 15px;
-            border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; transition: all 0.2s;
-        }
-        .rank-tab.active { background: var(--blue-glow); color: #000; border-color: #fff; box-shadow: 0 0 15px var(--blue-glow); }
-        .leaderboard-list {
-            flex: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px;
-            border: 1px solid #333; margin-bottom: 15px;
-        }
-        .rank-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 12px 15px;
-            background: rgba(255,255,255,0.05); border-bottom: 1px solid #222; border-radius: 5px; margin-bottom: 5px;
-        }
-        .rank-item:last-child { border-bottom: none; }
-        .rank-number { font-size: 1.2rem; font-weight: bold; color: var(--gold); width: 40px; text-align: left; }
-        .rank-name { flex: 1; text-align: left; font-weight: bold; font-size: 1.1rem; }
-        .rank-score { font-size: 1.1rem; color: var(--accent-green); font-weight: bold; }
-        
-        .rank-item.my-rank { background: rgba(0, 229, 255, 0.2); border: 1px solid var(--blue-glow); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
-        .rank-item.rank-1 { background: linear-gradient(90deg, rgba(255, 207, 51, 0.2), transparent); border-left: 4px solid var(--gold); }
-        .rank-1 .rank-name::after { content: ' 👑'; font-size: 1.2rem; }
+/* ERR */
+.err-msg{background:rgba(255,80,80,0.1);border:2px solid rgba(255,100,100,0.32);border-radius:12px;padding:9px 13px;font-weight:700;color:#c0392b;font-size:0.82rem;text-align:center;display:none;margin-bottom:10px;animation:shakeX 0.35s ease;}
+.err-msg.show{display:block;}
+@keyframes shakeX{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
 
-        /* ==========================================================================
-           GAME UI & LIVE STRENGTH HUD
-           ========================================================================== */
-        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; display: none; }
-        
-        .timer-container { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); text-align: center; transition: all 0.3s; z-index: 100; }
-        #match-timer { font-size: 3rem; font-weight: bold; color: var(--gold); text-shadow: 0 0 20px var(--gold); transition: all 0.3s; }
-        .phase-text { font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s; }
+/* BUTTONS */
+.btn{width:100%;padding:14px 20px;border:none;border-radius:16px;font-family:var(--font-b);font-weight:900;font-size:clamp(0.88rem,2.4vw,1.05rem);cursor:pointer;transition:all 0.14s;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.3px;-webkit-appearance:none;}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.22) 0%,transparent 55%);pointer-events:none;border-radius:inherit;}
+.btn:active{transform:translateY(5px)!important;box-shadow:none!important;}
+.btn-blue{background:linear-gradient(135deg,#1a7fd4,#0f5fa8);color:#fff;box-shadow:0 6px 0 #0a3d7a,0 10px 24px rgba(15,95,168,0.3);}
+.btn-blue:hover{background:linear-gradient(135deg,#2090e8,#1a6fc0);}
+.btn-green{background:linear-gradient(135deg,#2ecc71,#1aaa5b);color:#fff;box-shadow:0 6px 0 #106b38,0 10px 24px rgba(30,170,80,0.3);}
+.btn-gold{background:linear-gradient(135deg,#f6d020,#e8a800);color:#5a3a00;box-shadow:0 6px 0 #9a6f00,0 10px 24px rgba(232,168,0,0.3);}
+.btn-red{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;box-shadow:0 6px 0 #7d2418,0 10px 24px rgba(192,57,43,0.3);}
+.btn-gray{background:linear-gradient(135deg,#90a8c0,#7090a8);color:#fff;box-shadow:0 5px 0 #4a6078;}
+.btn-sm{padding:9px 16px;font-size:0.78rem;width:auto;}
+.btn-bounce:hover{transform:translateY(-3px) scale(1.02);}
 
-        #strength-hud {
-            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: row; justify-content: space-between; gap: 30px;
-            width: 90%; max-width: 600px; z-index: 100; pointer-events: none;
-            background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important;
-        }
-        .strength-wrapper { display: flex; flex-direction: column; width: 45%; gap: 8px; }
-        .strength-label { font-size: 1rem; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
-        .strength-bar-container {
-            width: 100%; height: 16px; background: rgba(0,0,0,0.5); border-radius: 8px; 
-            overflow: hidden; border: 2px solid; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.8);
-        }
-        .strength-fill {
-            position: absolute; top: 0; height: 100%; background: currentColor;
-            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1); box-shadow: 0 0 20px currentColor;
-        }
-        #blue-strength-bar { left: 0; }
-        #red-strength-bar { right: 0; }
+/* LOBBY */
+#screen-lobby{justify-content:flex-start;padding:0;}
+.lbar{width:100%;padding:9px clamp(10px,3vw,22px);background:rgba(255,255,255,0.9);backdrop-filter:blur(12px);border-bottom:3px solid rgba(168,220,255,0.45);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;z-index:5;flex-shrink:0;}
+.lbar-logo{font-family:var(--font-d);font-size:clamp(1rem,3vw,1.4rem);color:var(--deep);display:flex;align-items:center;gap:5px;}
+.chips{display:flex;gap:5px;flex-wrap:wrap;}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 12px 6px 7px;background:linear-gradient(135deg,rgba(200,240,255,0.9),rgba(230,248,255,0.9));border:2.5px solid rgba(100,180,255,0.35);border-radius:50px;font-family:var(--font-b);font-weight:800;font-size:clamp(0.62rem,1.8vw,0.78rem);color:var(--deep);transition:all 0.2s;cursor:default;}
+.chip:hover{transform:scale(1.05);border-color:var(--mid);}
+.chip-ic{width:26px;height:26px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;box-shadow:0 2px 5px rgba(0,100,200,0.12);}
 
-        /* Shop Elements */
-        .shop-bar {
-            position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px;
-            background: linear-gradient(to top, rgba(0,0,0,1), transparent);
-            display: flex; justify-content: center; gap: 15px; pointer-events: all;
-            z-index: 90;
-        }
-        .shop-item {
-            width: 90px; height: 110px; background: rgba(10, 32, 58, 0.9);
-            border: 2px solid #1a3a5a; border-radius: 12px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        .shop-item:hover { border-color: var(--blue-glow); transform: translateY(-5px); }
-        .shop-item.selected { border-color: #00ff88; box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); background: rgba(0, 255, 136, 0.1); }
-        .item-icon { font-size: 2.5rem; margin-bottom: 5px; }
-        .item-cost { font-weight: bold; color: var(--gold); display: flex; align-items: center; gap: 5px; }
-        
-        #ready-btn-container { position: fixed; right: 30px; bottom: 30px; pointer-events: all; z-index: 1000; }
-        #btn-ready { padding: 15px 40px; font-size: 1.5rem; border-radius: 12px; margin: 0; }
+.lbody{flex:1;width:100%;display:flex;align-items:stretch;overflow:hidden;}
+.ldeco{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(14px,3vw,28px);}
+@media(max-width:720px){.ldeco{display:none;}}
+.deco-castle{font-size:clamp(5rem,11vw,9rem);filter:drop-shadow(0 10px 28px rgba(100,180,255,0.5));animation:cFloat 4s ease-in-out infinite;}
+@keyframes cFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.deco-ttl{font-family:var(--font-d);font-size:clamp(1.2rem,3vw,2rem);color:white;text-align:center;margin-top:14px;text-shadow:0 2px 8px rgba(0,50,120,0.45);}
+.deco-sub{font-size:clamp(0.72rem,2vw,0.92rem);color:rgba(200,235,255,0.9);text-align:center;margin-top:7px;font-weight:700;}
+.deco-chars{display:flex;gap:18px;margin-top:20px;}
+.deco-char{font-size:clamp(2.2rem,4.5vw,3.2rem);animation:charB 1.5s ease-in-out infinite;filter:drop-shadow(0 4px 8px rgba(0,50,120,0.3));}
+.deco-char:nth-child(2){animation-delay:0.3s;}.deco-char:nth-child(3){animation-delay:0.6s;}
+@keyframes charB{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px) scale(1.07);}}
 
-        #unit-preview {
-            position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 15px;
-            display: none; flex-direction: row; gap: 15px; z-index: 60; box-shadow: 0 0 20px var(--gold);
-            align-items: center;
-        }
+.lright{width:min(410px,100%);flex-shrink:0;background:rgba(255,255,255,0.9);backdrop-filter:blur(16px);border-left:3px solid rgba(168,220,255,0.35);display:flex;flex-direction:column;padding:clamp(14px,3vw,24px);overflow-y:auto;gap:12px;}
+@media(max-width:720px){.lright{width:100%;border-left:none;border-top:3px solid rgba(168,220,255,0.35);}}
+.war-ttl{font-family:var(--font-d);font-size:clamp(1.5rem,4vw,2rem);color:var(--deep);margin-bottom:2px;}
+.war-sub{font-size:0.87rem;color:#6080a0;font-weight:700;line-height:1.5;}
 
-        /* ==========================================================================
-           CANVAS ENGINE
-           ========================================================================== */
-        #game-canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-            transition: transform 2s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .zoom-battle { transform: scale(1.15) rotateX(15deg); }
+.modes{display:flex;flex-direction:column;gap:9px;}
+.mode-card{padding:13px 16px;background:linear-gradient(135deg,rgba(200,240,255,0.45),rgba(230,248,255,0.25));border:2.5px solid rgba(100,180,255,0.22);border-radius:16px;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;gap:12px;}
+.mode-card:hover{transform:translateX(4px);border-color:rgba(30,120,220,0.38);}
+.mode-card.active{border-color:var(--mid);background:linear-gradient(135deg,rgba(168,210,255,0.45),rgba(200,240,255,0.25));box-shadow:0 4px 18px rgba(30,100,200,0.13);}
+.mode-card.active::after{content:'✓';margin-left:auto;color:var(--mid);font-weight:900;font-size:1.2rem;}
+.mc-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.mc-ic.pvp{background:linear-gradient(135deg,rgba(255,100,100,0.18),rgba(255,100,100,0.04));border:2px solid rgba(255,100,100,0.22);}
+.mc-ic.prac{background:linear-gradient(135deg,rgba(80,220,150,0.18),rgba(80,220,150,0.04));border:2px solid rgba(80,220,150,0.22);}
+.mc-name{font-family:var(--font-b);font-weight:900;color:var(--deep);font-size:0.88rem;}
+.mc-desc{font-size:0.77rem;color:#6080a0;font-weight:600;margin-top:1px;}
 
-        /* ==========================================================================
-           VICTORY / DEFEAT ANIMATIONS
-           ========================================================================== */
-        #result-popup {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            display: none; justify-content: center; align-items: center; z-index: 10000;
-            flex-direction: column; text-align: center;
-        }
-        #result-popup.active { display: flex; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.mm-box{display:none;padding:13px 16px;background:linear-gradient(135deg,rgba(255,200,200,0.18),rgba(255,180,180,0.08));border:2.5px solid rgba(255,120,120,0.3);border-radius:16px;align-items:center;gap:11px;}
+.mm-box.show{display:flex;animation:fuUp 0.3s ease;}
+@keyframes fuUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.mm-spin{width:32px;height:32px;border-radius:50%;flex-shrink:0;border:3px solid rgba(255,120,120,0.2);border-top-color:#e74c3c;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.mm-lbl{font-weight:900;color:#c0392b;font-size:0.82rem;}
+.mm-sub{font-size:0.73rem;color:#a06060;margin-top:2px;}
 
-        .result-title { font-size: 6rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 5px; }
-        .result-reason { font-size: 1.5rem; color: #aaa; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        .victory-text { color: #00ff88; text-shadow: 0 0 30px #00ff88, 0 0 60px #00cc6a; animation: pulseVic 2s infinite; }
-        .defeat-text { color: #ff0044; text-shadow: 0 0 30px #ff0044, 0 0 60px #cc0033; animation: pulseDef 2s infinite; }
-        .draw-text { color: #ffcf33; text-shadow: 0 0 30px #ffcf33, 0 0 60px #ffaa00; }
+.rm-sec{margin-top:auto;padding-top:12px;border-top:2px dashed rgba(100,180,255,0.22);}
+.rm-ttl{font-weight:800;font-size:0.68rem;letter-spacing:2px;color:#90b0d0;margin-bottom:9px;text-transform:uppercase;}
+.rm-item{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:rgba(200,235,255,0.18);border-radius:10px;margin-bottom:5px;font-size:0.78rem;font-weight:700;}
+.rm-w{color:#27ae60;}.rm-l{color:#e74c3c;}
 
-        @keyframes pulseVic { 0%, 100% { text-shadow: 0 0 30px #00ff88; } 50% { text-shadow: 0 0 60px #00ff88, 0 0 90px white; } }
-        @keyframes pulseDef { 0%, 100% { text-shadow: 0 0 30px #ff0044; } 50% { text-shadow: 0 0 60px #ff0044, 0 0 90px white; } }
+/* MODALS */
+.modal-ov{position:fixed;inset:0;z-index:5000;background:rgba(10,40,80,0.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:18px;}
+.modal-ov.show{display:flex;animation:fadIn 0.3s ease;}
+@keyframes fadIn{from{opacity:0;}to{opacity:1;}}
+.modal-box{background:white;border-radius:26px;padding:clamp(18px,4vw,28px);width:min(480px,94vw);max-height:85vh;border:3px solid var(--border-ice);box-shadow:0 28px 80px rgba(0,50,150,0.28);position:relative;display:flex;flex-direction:column;animation:mPop 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes mPop{from{opacity:0;transform:scale(0.82);}to{opacity:1;transform:scale(1);}}
+.modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(200,220,255,0.38);color:var(--deep);font-size:1rem;cursor:pointer;font-weight:900;transition:all 0.14s;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:rgba(200,220,255,0.75);transform:scale(1.1);}
+.modal-ttl{font-family:var(--font-d);font-size:clamp(1.2rem,3vw,1.7rem);color:var(--deep);margin-bottom:3px;}
+.modal-sub{font-size:0.83rem;color:#6080a0;font-weight:600;margin-bottom:16px;}
+.rank-tabs{display:flex;gap:7px;margin-bottom:14px;}
+.rank-tab{flex:1;padding:9px;border:2.5px solid rgba(100,180,255,0.22);border-radius:12px;background:rgba(200,240,255,0.28);font-family:var(--font-b);font-weight:800;font-size:clamp(0.62rem,1.7vw,0.78rem);color:var(--mid);cursor:pointer;transition:all 0.18s;}
+.rank-tab.active{background:var(--mid);color:white;border-color:var(--mid);box-shadow:0 4px 12px rgba(30,100,200,0.28);}
+.rank-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding-right:3px;}
+.rank-list::-webkit-scrollbar{width:5px;}.rank-list::-webkit-scrollbar-track{background:rgba(200,235,255,0.28);border-radius:8px;}.rank-list::-webkit-scrollbar-thumb{background:rgba(100,170,255,0.38);border-radius:8px;}
+.rk-item{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:13px;background:linear-gradient(135deg,rgba(200,240,255,0.28),rgba(230,248,255,0.18));border:2px solid rgba(100,180,255,0.13);font-weight:700;}
+.rk-item.rk1{background:linear-gradient(135deg,rgba(255,220,80,0.28),rgba(255,200,50,0.08));border-color:rgba(255,200,50,0.38);}
+.rk-item.isme{background:linear-gradient(135deg,rgba(100,180,255,0.22),rgba(150,210,255,0.12));border-color:var(--mid);}
+.rk-num{font-family:var(--font-d);font-size:1.05rem;width:30px;color:var(--gold2);}
+.rk-name{flex:1;font-size:0.87rem;color:var(--deep);}
+.rk-val{font-family:var(--font-d);font-size:0.95rem;color:#27ae60;}
 
-        .result-stats { font-size: 1.8rem; color: white; margin-bottom: 40px; background: rgba(255,255,255,0.1); padding: 15px 40px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); }
-        .stat-change { font-weight: bold; }
-        .stat-change.pos { color: #00ff88; }
-        .stat-change.neg { color: #ff0044; }
+/* GAME SCREEN */
+#screen-game{display:none;position:fixed;inset:0;z-index:10;padding:0;}
+#screen-game.active{display:block;}
+#game-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;transition: transform 2s cubic-bezier(0.25, 1, 0.5, 1);}
+#game-canvas.zoom-battle{transform: scale(1.15) rotateX(15deg);}
 
-        /* ==========================================================================
-           MOBILE RESPONSIVENESS
-           ========================================================================== */
-        @media (max-width: 768px) {
-            .top-bar { padding: 5px 10px; flex-wrap: wrap; }
-            .stat-box { font-size: 0.8rem; padding: 2px 8px 2px 2px; gap: 4px; }
-            .stat-icon { width: 22px; height: 22px; font-size: 0.8rem; }
-            .vs-banner { font-size: 0.8rem; padding: 3px 15px; top: 8px; }
-            .top-bar h3 { font-size: 1rem; }
-            #enemy-state { font-size: 0.8rem; }
+/* Game top bar */
+.g-bar{position:absolute;top:0;left:0;right:0;z-index:50;padding:9px clamp(9px,2.5vw,18px);display:flex;align-items:center;justify-content:space-between;gap:7px;background:linear-gradient(to bottom,rgba(255,255,255,0.9) 0%,rgba(255,255,255,0) 100%);pointer-events:none;}
+.g-bar>*{pointer-events:all;}
+.g-badge{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,0.92);border-radius:50px;backdrop-filter:blur(8px);}
+.g-badge.bl{border:2.5px solid rgba(30,120,220,0.32);}
+.g-badge.rd{border:2.5px solid rgba(220,50,50,0.32);}
+.g-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.g-dot.b{background:#1a7fd4;box-shadow:0 0 7px #1a7fd4;}
+.g-dot.r{background:#e74c3c;box-shadow:0 0 7px #e74c3c;}
+.g-bname{font-family:var(--font-b);font-weight:800;font-size:clamp(0.6rem,1.5vw,0.78rem);color:var(--deep);}
+.g-bst{font-size:0.62rem;color:#6080a0;font-weight:600;}
 
-            .shop-bar {
-                top: 50%; left: 0; bottom: auto; transform: translateY(-50%);
-                flex-direction: column; width: auto; padding: 10px;
-                background: linear-gradient(to right, rgba(0,0,0,0.95), transparent);
-                justify-content: flex-start; gap: 8px;
-            }
-            .shop-item { width: 60px; height: 70px; margin: 0; }
-            .item-icon { font-size: 1.5rem; margin-bottom: 2px; }
-            .shop-item div { font-size: 0.65rem; text-align: center; line-height: 1; }
-            .item-cost { font-size: 0.75rem; margin-top: 2px; }
+.g-center{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;top:8px;}
+.g-timer{font-family:var(--font-d);font-size:clamp(2rem,5vw,3rem);color:var(--deep);text-shadow:0 2px 0 rgba(255,255,255,0.8);transition:all 0.28s;line-height:1;}
+.g-timer.urgent{color:#e74c3c;animation:tFlash 0.5s infinite;}
+@keyframes tFlash{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+.g-phase{font-family:var(--font-b);font-weight:800;font-size:clamp(0.52rem,1.2vw,0.68rem);color:var(--mid);letter-spacing:2px;margin-top:2px;text-transform:uppercase;}
+.g-gold{display:inline-flex;align-items:center;gap:4px;background:rgba(255,220,80,0.22);border:2px solid rgba(255,200,50,0.35);border-radius:50px;padding:3px 10px;font-family:var(--font-b);font-weight:800;font-size:0.72rem;color:#8a6000;margin-top:4px;}
 
-            #ready-btn-container { right: 15px; bottom: 15px; }
-            #btn-ready { padding: 12px 25px !important; font-size: 1.2rem !important; }
+/* Strength HUD */
+#str-hud{position:absolute;right:clamp(9px,2.5vw,18px);top:50%;transform:translateY(-50%);z-index:50;display:none;flex-direction:column;align-items:center;gap:7px;background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);border:2.5px solid rgba(100,180,255,0.32);border-radius:18px;padding:13px 11px;pointer-events:none;box-shadow:0 8px 28px rgba(30,100,200,0.13);}
+#str-hud.show{display:flex;}
+.str-lbl{font-family:var(--font-b);font-weight:800;font-size:0.52rem;letter-spacing:2px;color:#6080a0;text-transform:uppercase;}
+.str-row{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.str-name{font-family:var(--font-b);font-weight:800;font-size:0.58rem;letter-spacing:1px;}
+.str-track{width:24px;height:clamp(90px,14vh,150px);background:rgba(200,235,255,0.38);border-radius:12px;border:2px solid;overflow:hidden;position:relative;}
+.str-fill{position:absolute;bottom:0;left:0;right:0;border-radius:12px 12px 0 0;transition:height 0.4s cubic-bezier(0.25,1,0.5,1);}
+.str-fill.bl{background:linear-gradient(to top,#1a7fd4,#6ab8ff);box-shadow:0 -4px 10px rgba(30,120,220,0.38);}
+.str-fill.rd{background:linear-gradient(to top,#e74c3c,#ff9090);box-shadow:0 -4px 10px rgba(220,50,50,0.38);}
+.str-div{width:100%;height:1.5px;background:rgba(100,180,255,0.18);margin:1px 0;}
 
-            #strength-hud { top: 90px; gap: 15px; width: 95%; }
-            .strength-label { font-size: 0.7rem; }
-            .strength-bar-container { height: 10px; border-width: 1px; }
-            .timer-container { top: 40px; }
-            #match-timer { font-size: 2rem; }
-            
-            .panel-3d { padding: 25px 15px; width: 95%; }
-            .result-title { font-size: 3rem; }
-            .result-stats { font-size: 1rem; padding: 10px 20px; }
-            
-            #unit-preview { bottom: 80px; padding: 5px 15px; font-size: 0.8rem; }
-        }
-    </style>
+/* Shop */
+#shop-bar{position:absolute;bottom:0;left:0;right:0;z-index:50;padding:clamp(9px,2vw,14px) clamp(7px,2vw,13px);background:linear-gradient(to top,rgba(255,255,255,0.97) 45%,transparent);display:flex;align-items:flex-end;justify-content:center;gap:clamp(5px,1.4vw,10px);flex-wrap:wrap;}
+.shop-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:clamp(7px,1.4vw,11px) clamp(5px,1.1vw,9px);min-width:clamp(60px,9vw,76px);background:rgba(220,245,255,0.88);border:2.5px solid rgba(100,180,255,0.22);border-radius:16px;cursor:pointer;transition:all 0.18s;box-shadow:0 4px 0 rgba(80,150,220,0.22),0 6px 18px rgba(0,0,0,0.07);}
+.shop-card:hover{transform:translateY(-5px) scale(1.04);border-color:rgba(30,120,220,0.48);box-shadow:0 8px 0 rgba(80,150,220,0.22),0 12px 22px rgba(0,0,0,0.11);}
+.shop-card.sel{border-color:#27ae60;background:rgba(180,255,200,0.38);box-shadow:0 4px 0 #1a7a40,0 0 18px rgba(80,220,120,0.28);}
+.shop-ic{font-size:clamp(1.35rem,2.8vw,1.9rem);}
+.shop-nm{font-family:var(--font-b);font-weight:800;font-size:clamp(0.5rem,1.15vw,0.64rem);color:var(--deep);text-align:center;}
+.shop-cs{display:flex;align-items:center;gap:3px;font-family:var(--font-b);font-weight:800;font-size:clamp(0.58rem,1.2vw,0.68rem);color:#8a6000;}
+.shop-st{font-size:clamp(0.42rem,0.85vw,0.54rem);color:#7090a8;text-align:center;line-height:1.28;}
+#ready-area{display:flex;flex-direction:column;align-items:center;gap:4px;margin-left:clamp(5px,1.4vw,14px);}
+#btn-ready{white-space:nowrap;padding:12px clamp(12px,2.4vw,22px);font-size:clamp(0.68rem,1.4vw,0.86rem);}
+
+/* Placement tip */
+#ptip{position:absolute;left:50%;transform:translateX(-50%);bottom:clamp(105px,17vw,145px);z-index:51;background:rgba(255,255,255,0.94);border:2.5px solid rgba(100,180,255,0.38);border-radius:50px;padding:7px 18px;font-family:var(--font-b);font-weight:800;font-size:clamp(0.62rem,1.4vw,0.78rem);color:var(--mid);pointer-events:none;display:none;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(30,100,200,0.13);animation:tipF 2s ease-in-out infinite;}
+#ptip.show{display:block;}
+@keyframes tipF{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-4px);}}
+
+/* Battle log */
+#blog{position:absolute;left:clamp(9px,2.5vw,18px);bottom:clamp(105px,17vw,145px);width:min(230px,30vw);max-height:120px;overflow:hidden;display:none;z-index:50;pointer-events:none;}
+#blog.show{display:block;}
+.blog-e{font-family:var(--font-b);font-weight:700;font-size:0.62rem;padding:4px 9px;margin-bottom:3px;border-radius:9px;background:rgba(255,255,255,0.92);border-left:3px solid;animation:logIn 0.28s ease;box-shadow:0 2px 7px rgba(0,0,0,0.09);}
+@keyframes logIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:translateX(0);}}
+.blog-e.kill{border-color:#e74c3c;color:#c0392b;}
+.blog-e.deploy{border-color:#1a7fd4;color:var(--deep);}
+.blog-e.info{border-color:#f39c12;color:#8a6000;}
+
+/* Enemy chip */
+.g-echip{position:absolute;top:76px;right:clamp(9px,2.5vw,18px);z-index:50;padding:9px 13px;background:rgba(255,255,255,0.92);border:2.5px solid rgba(255,120,120,0.32);border-radius:13px;pointer-events:none;display:none;box-shadow:0 4px 14px rgba(200,50,50,0.09);}
+.g-ecl{font-family:var(--font-b);font-weight:800;font-size:0.62rem;color:#e74c3c;}
+.g-ecv{font-size:0.72rem;color:#6080a0;font-weight:600;margin-top:2px;}
+
+/* TOAST */
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:9998;background:white;border:2.5px solid rgba(100,180,255,0.38);border-radius:50px;padding:11px 22px;font-family:var(--font-b);font-weight:800;font-size:0.78rem;color:var(--deep);display:none;box-shadow:0 8px 28px rgba(30,100,200,0.18);pointer-events:none;}
+#toast.show{display:block;animation:toIn 0.28s ease;}
+@keyframes toIn{from{opacity:0;transform:translateX(-50%) translateY(-9px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* RESULT */
+#result-ov{position:fixed;inset:0;z-index:9000;background:rgba(10,40,100,0.9);backdrop-filter:blur(20px);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;}
+#result-ov.show{display:flex;animation:resIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both;}
+@keyframes resIn{from{opacity:0;transform:scale(0.72);}80%{transform:scale(1.05);}to{opacity:1;transform:scale(1);}}
+.res-em{font-size:clamp(5rem,14vw,8rem);animation:resBounce 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;filter:drop-shadow(0 10px 28px rgba(0,0,0,0.28));}
+@keyframes resBounce{from{transform:scale(0) rotate(-18deg);}to{transform:scale(1) rotate(0deg);}}
+.res-ttl{font-family:var(--font-d);font-size:clamp(3rem,10vw,6rem);line-height:1;margin-bottom:7px;margin-top:14px;}
+.res-ttl.win{color:var(--mint);text-shadow:0 4px 0 rgba(0,150,80,0.38),0 0 38px rgba(100,255,180,0.48);}
+.res-ttl.loss{color:#ff9090;text-shadow:0 4px 0 rgba(150,0,0,0.38),0 0 38px rgba(255,100,100,0.48);}
+.res-ttl.draw{color:var(--gold);text-shadow:0 4px 0 rgba(150,100,0,0.38),0 0 38px rgba(255,220,80,0.48);}
+.res-reason{font-family:var(--font-b);font-weight:800;font-size:clamp(0.78rem,2.3vw,1rem);color:rgba(200,235,255,0.9);margin-bottom:24px;letter-spacing:2px;text-transform:uppercase;}
+.res-row{display:flex;gap:clamp(9px,2.3vw,18px);margin-bottom:32px;flex-wrap:wrap;justify-content:center;}
+.res-stat{padding:14px 18px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.14);border-radius:18px;min-width:84px;}
+.res-v{font-family:var(--font-d);font-size:1.75rem;line-height:1;}
+.res-v.pos{color:var(--mint);}.res-v.neg{color:#ff9090;}.res-v.neu{color:var(--gold);}
+.res-lbl{font-family:var(--font-b);font-weight:700;font-size:0.62rem;letter-spacing:2px;color:rgba(200,235,255,0.68);margin-top:3px;text-transform:uppercase;}
+.res-snow{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.res-flake{position:absolute;animation:fFall linear infinite;opacity:0.6;}
+@keyframes fFall{0%{transform:translateY(-50px) rotate(0deg);opacity:0;}10%{opacity:0.6;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
+@media(max-width:460px){.shop-card .shop-st{display:none;}#blog{display:none!important;}}
+</style>
 </head>
 <body>
 
-    <div id="global-loader">
-        <div class="spinner"></div>
-        <div id="loading-text">CONNECTING TO SERVER...</div>
-        <div id="loading-subtext">INITIALIZING 2.5D BATTLE ENGINE...</div>
+<div id="sky"></div>
+<div id="stars"></div>
+<svg id="mts" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,320 L0,210 L80,155 L160,195 L240,125 L320,178 L400,95 L480,158 L560,75 L640,128 L720,55 L800,108 L880,68 L960,128 L1040,78 L1120,138 L1200,88 L1280,148 L1360,108 L1440,165 L1440,320Z" fill="#1a3a6a" opacity="0.92"/>
+  <path d="M0,320 L0,255 L100,196 L180,238 L260,168 L340,218 L420,148 L500,198 L580,128 L660,178 L740,108 L820,158 L900,118 L980,168 L1060,138 L1140,188 L1220,148 L1300,198 L1380,158 L1440,208 L1440,320Z" fill="#234f90" opacity="0.88"/>
+  <path d="M400,95 L382,128 L418,128Z" fill="white" opacity="0.92"/>
+  <path d="M560,75 L543,103 L577,103Z" fill="white" opacity="0.92"/>
+  <path d="M720,55 L703,85 L737,85Z" fill="white" opacity="0.92"/>
+  <path d="M880,68 L863,98 L897,98Z" fill="white" opacity="0.92"/>
+  <path d="M1040,78 L1023,108 L1057,108Z" fill="white" opacity="0.92"/>
+  <path d="M0,320 L0,285 L120,238 L200,278 L300,218 L400,268 L500,208 L600,258 L700,198 L800,248 L900,218 L1000,268 L1100,228 L1200,278 L1300,238 L1400,288 L1440,268 L1440,320Z" fill="#3070b8" opacity="0.82"/>
+  <path d="M300,218 L286,242 L314,242Z" fill="rgba(255,255,255,0.88)"/>
+  <path d="M500,208 L486,232 L514,232Z" fill="rgba(255,255,255,0.88)"/>
+  <path d="M700,198 L686,222 L714,222Z" fill="rgba(255,255,255,0.88)"/>
+  <path d="M900,218 L886,242 L914,242Z" fill="rgba(255,255,255,0.88)"/>
+  <path d="M1100,228 L1086,252 L1114,252Z" fill="rgba(255,255,255,0.88)"/>
+  <path d="M0,305 Q360,288 720,302 Q1080,316 1440,298 L1440,320 L0,320Z" fill="rgba(225,248,255,0.72)"/>
+</svg>
+<div id="sground"></div>
+<canvas id="snowc"></canvas>
+
+<div id="loader">
+  <div class="ld-icon">🏔️</div>
+  <div class="ld-title">❄️ FROZEN CLASH ❄️</div>
+  <div style="font-family:var(--font-b);font-weight:700;color:rgba(168,230,255,0.8);font-size:0.85rem;margin-top:4px;">🏔 Ice Kingdom Wars 🏔</div>
+  <div class="ld-wrap"><div class="ld-bar"></div></div>
+  <div class="ld-tip" id="ld-tip">🌨 Loading the ice kingdom...</div>
+</div>
+
+<div id="toast"></div>
+
+<div id="screen-auth" class="screen active">
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;width:min(430px,94vw);">
+    <div class="mascot-wrap">
+      <span class="mascot-icon">🧊</span>
+      <div class="mascot-bubble">🎮 Let's play!</div>
     </div>
-
-    <canvas id="game-canvas"></canvas>
-
-    <div id="screen-auth" class="screen active">
-        <div class="panel-3d" id="panel-login">
-            <h1 style="color: var(--blue-glow); margin-bottom: 5px; font-size: 3rem; text-shadow: 0 0 20px var(--blue-glow);">ULTIMATE CLASH</h1>
-            <p style="color: #aaa; margin-bottom: 30px; letter-spacing: 2px;">2.5D AUTO-BATTLER</p>
-            
-            <input type="email" id="auth-email-login" class="input-field" placeholder="Commander Email">
-            <input type="password" id="auth-pass-login" class="input-field" placeholder="Secret Password">
-            
-            <button class="btn-clash" onclick="gameApp.login()">SIGN IN</button>
-            <button class="btn-clash gray" onclick="gameApp.toggleAuth('signup')" style="margin-top: 15px; font-size: 1rem; padding: 12px;">CREATE NEW ACCOUNT</button>
-        </div>
-
-        <div class="panel-3d" id="panel-signup" style="display: none; border-color: var(--accent-green); box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 255, 136, 0.1);">
-            <h1 style="color: var(--accent-green); margin-bottom: 5px; font-size: 3rem; text-shadow: 0 0 20px var(--accent-green);">JOIN THE WAR</h1>
-            <p style="color: #aaa; margin-bottom: 30px; letter-spacing: 2px;">REGISTER COMMANDER</p>
-            
-            <input type="email" id="auth-email-signup" class="input-field" placeholder="New Email Address">
-            <input type="password" id="auth-pass-signup" class="input-field" placeholder="Create Secure Password">
-            
-            <button class="btn-clash glow" onclick="gameApp.register()" style="background: linear-gradient(to bottom, #00ff88, #00cc6a);">SIGN UP</button>
-            <button class="btn-clash gray" onclick="gameApp.toggleAuth('login')" style="margin-top: 15px; font-size: 1rem; padding: 12px;">BACK TO LOGIN</button>
-        </div>
+    <div class="ice-panel">
+      <div class="panel-deco">❄</div>
+      <div class="auth-title">❄️ Frozen Clash</div>
+      <div class="auth-sub">🏔 Ice Kingdom Warriors 🏔</div>
+      <div class="tabs">
+        <button class="tab active" id="tab-in" onclick="swTab('in')">🧊 Sign In</button>
+        <button class="tab" id="tab-up" onclick="swTab('up')">⭐ Join!</button>
+      </div>
+      <div id="auth-err" class="err-msg">❌ Oops! Check your details!</div>
+      <div class="field">
+        <span class="field-em">📧</span>
+        <input type="email" id="auth-email" class="ice-input" placeholder="Your email address" autocomplete="email">
+        <span class="field-lbl">COMMANDER EMAIL</span>
+      </div>
+      <div class="field">
+        <span class="field-em">🔐</span>
+        <input type="password" id="auth-pass" class="ice-input" placeholder="Secret password" autocomplete="current-password">
+        <span class="field-lbl">SECRET PASSWORD</span>
+      </div>
+      <button class="btn btn-blue btn-bounce" id="btn-auth" onclick="gameApp.auth()" style="margin-top:4px;">
+        <span id="auth-ic">❄️</span><span id="auth-tx">ENTER ICE KINGDOM</span>
+      </button>
+      <div style="text-align:center;margin-top:14px;font-family:var(--font-b);font-size:0.72rem;color:#90b0d0;font-weight:700;">
+        🔒 Safe & Secure · Firebase Protected
+      </div>
     </div>
+  </div>
+</div>
 
-    <div id="screen-lobby" class="screen">
-        <div class="top-bar">
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <div class="stat-box"><div class="stat-icon">💰</div><span id="lobby-gold">0</span></div>
-                <div class="stat-box" style="border-color: var(--blue-glow);"><div class="stat-icon" style="background:var(--blue-glow);">🏰</div><span id="lobby-grids">40</span></div>
-                <div class="stat-box" style="border-color: var(--accent-green);"><div class="stat-icon" style="background:var(--accent-green);">⚔️</div><span id="lobby-streak">0</span></div>
-                <div class="stat-box profile-btn" onclick="gameApp.toggleProfileModal()">
-                    <div class="stat-icon" style="background:#fff;">👤</div><span id="lobby-profile-name">Commander</span>
-                </div>
-            </div>
-            <button onclick="gameApp.logout()" class="btn-clash gray" style="width: auto; padding: 10px 20px; margin-top: 0; font-size: 1rem; pointer-events: all;">LOGOUT</button>
+<div id="screen-lobby" class="screen">
+  <div class="lbar">
+    <div class="lbar-logo">❄️ Frozen Clash</div>
+    <div class="chips">
+      <div class="chip"><div class="chip-ic">💰</div><span id="lb-gold">5000</span>&nbsp;Gold</div>
+      <div class="chip"><div class="chip-ic">🏰</div><span id="lb-grids">50</span>&nbsp;Grids</div>
+      <div class="chip"><div class="chip-ic">🔥</div><span id="lb-streak">0</span>&nbsp;Streak</div>
+      <div class="chip" onclick="gameApp.openProfile()" style="cursor:pointer;border-color:rgba(200,160,255,0.45);">
+        <div class="chip-ic">👤</div><span id="lb-name">Commander</span>
+      </div>
+    </div>
+    <button class="btn btn-gray btn-sm btn-bounce" onclick="gameApp.logout()" style="pointer-events:all;">🚪 Leave</button>
+  </div>
+  <div class="lbody">
+    <div class="ldeco">
+      <div class="deco-castle">🏔️</div>
+      <div class="deco-ttl">Ice Kingdom Arena</div>
+      <div class="deco-sub">Battle for glory in the frozen mountains! 🗡️</div>
+      <div class="deco-chars">
+        <div class="deco-char">⛄</div>
+        <div class="deco-char">🧊</div>
+        <div class="deco-char">❄️</div>
+      </div>
+    </div>
+    <div class="lright">
+      <div>
+        <div class="war-ttl">⚔️ War Room</div>
+        <div class="war-sub">Place your icy forces and defeat your enemy! Collect gold and expand your frozen kingdom! 🧊</div>
+      </div>
+      <div class="modes">
+        <div class="mode-card active" id="card-pvp" onclick="selMode('pvp')">
+          <div class="mc-ic pvp">⚔️</div>
+          <div><div class="mc-name">🌐 Live Battle!</div><div class="mc-desc">Fight a real player online!</div></div>
         </div>
+        <div class="mode-card" id="card-prac" onclick="selMode('prac')">
+          <div class="mc-ic prac">🤖</div>
+          <div><div class="mc-name">🎯 Training</div><div class="mc-desc">Practice your strategy!</div></div>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-bounce" onclick="gameApp.openLb()" style="font-size:0.88rem;padding:12px;">🏆 View Ice Champions!</button>
+      <button class="btn btn-red btn-bounce" id="btn-mm" onclick="gameApp.findMatch()" style="font-size:1rem;padding:17px;">🎮 Find Opponent!</button>
+      <div class="mm-box" id="mm-box">
+        <div class="mm-spin"></div>
+        <div><div class="mm-lbl">🛰 Searching mountains...</div><div class="mm-sub" id="mm-sub">Looking for opponents</div></div>
+        <button class="btn btn-gray btn-sm" onclick="gameApp.cancelMatch()" style="width:auto;flex-shrink:0;margin-left:auto;">✕</button>
+      </div>
+      <div class="rm-sec">
+        <div class="rm-ttl">⚔️ Recent Battles</div>
+        <div id="rm-list">
+          <div class="rm-item"><span>🧊 PVP Battle</span><span>vs IceKing_X</span><span class="rm-w">WIN +200⭐</span></div>
+          <div class="rm-item"><span>🧊 PVP Battle</span><span>vs FrostWolf</span><span class="rm-l">LOSS 😢</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="modal-profile">
+  <div class="modal-box" style="max-width:360px;">
+    <button class="modal-close" onclick="gameApp.closeProfile()">✕</button>
+    <div class="modal-ttl">👤 My Profile</div>
+    <div class="modal-sub">Set your commander name!</div>
+    <div class="field">
+      <span class="field-em">🧊</span>
+      <input type="text" id="name-in" class="ice-input" placeholder="Enter your cool name..." maxlength="20">
+    </div>
+    <button class="btn btn-green btn-bounce" onclick="gameApp.saveName()" style="margin-top:7px;">💾 Save Name</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="modal-lb">
+  <div class="modal-box" style="height:80vh;">
+    <button class="modal-close" onclick="gameApp.closeLb()">✕</button>
+    <div class="modal-ttl">🏆 Ice Champions</div>
+    <div class="modal-sub">Top 100 Frozen Warriors of the World!</div>
+    <div class="rank-tabs">
+      <button class="rank-tab active" id="rt-streak" onclick="gameApp.loadRank('streak')">⚔️ Streak</button>
+      <button class="rank-tab" id="rt-grids" onclick="gameApp.loadRank('grids')">🏰 Grids</button>
+      <button class="rank-tab" id="rt-gold" onclick="gameApp.loadRank('gold')">💰 Gold</button>
+    </div>
+    <div class="rank-list" id="rank-list">
+      <div style="text-align:center;padding:20px;color:#6080a0;font-weight:700;">❄️ Loading champions...</div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-game">
+  <canvas id="game-canvas"></canvas>
+  <div class="g-bar">
+    <div class="g-badge rd">
+      <div class="g-dot r"></div>
+      <div><div class="g-bname" style="color:#c0392b;">❄ Enemy Zone</div><div class="g-bst" id="enemy-st">Setting up...</div></div>
+    </div>
+    <div class="g-center">
+      <div class="g-timer" id="gc-timer">120</div>
+      <div class="g-phase" id="gc-phase">Placement Phase</div>
+      <div class="g-gold">💰 <span id="gc-gold">0</span> Gold</div>
+    </div>
+    <div class="g-badge bl">
+      <div><div class="g-bname" style="text-align:right;">🧊 Your Forces</div><div class="g-bst" id="my-st" style="text-align:right;">Placing units...</div></div>
+      <div class="g-dot b"></div>
+    </div>
+  </div>
+  <div class="g-echip" id="g-echip"><div class="g-ecl">🎯 Enemy Intel</div><div class="g-ecv" id="ec-v">Opponent is placing</div></div>
+  <div id="str-hud">
+    <div class="str-lbl">Power Bars</div>
+    <div class="str-row"><div class="str-name" style="color:#1a7fd4;">🧊 You</div><div class="str-track" style="border-color:rgba(30,120,220,0.28);"><div class="str-fill bl" id="b-str" style="height:100%"></div></div></div>
+    <div class="str-div"></div>
+    <div class="str-row"><div class="str-name" style="color:#e74c3c;">🔥 Opp</div><div class="str-track" style="border-color:rgba(220,50,50,0.28);"><div class="str-fill rd" id="r-str" style="height:100%"></div></div></div>
+  </div>
+  <div id="shop-bar">
+    <div class="shop-card" id="shop-soldier" onclick="gameApp.selectUnit('soldier',10)">
+      <div class="shop-ic">⚔️</div><div class="shop-nm">Soldier</div>
+      <div class="shop-cs">💰 10</div><div class="shop-st">HP:150·DMG:28</div>
+    </div>
+    <div class="shop-card" id="shop-barrier" onclick="gameApp.selectUnit('barrier',15)">
+      <div class="shop-ic">🧊</div><div class="shop-nm">Ice Wall</div>
+      <div class="shop-cs">💰 15</div><div class="shop-st">HP:800·DEF</div>
+    </div>
+    <div class="shop-card" id="shop-defense" onclick="gameApp.selectUnit('defense',30)">
+      <div class="shop-ic">🔫</div><div class="shop-nm">Cannon</div>
+      <div class="shop-cs">💰 30</div><div class="shop-st">HP:400·RNG</div>
+    </div>
+    <div class="shop-card" id="shop-arrow" onclick="gameApp.selectUnit('arrow',50)">
+      <div class="shop-ic">🏹</div><div class="shop-nm">Archer</div>
+      <div class="shop-cs">💰 50</div><div class="shop-st">HP:55·PWR</div>
+    </div>
+    <div id="ready-area">
+      <button class="btn btn-green btn-bounce" id="btn-ready" onclick="gameApp.declareReady()">⚡ READY!</button>
+      <div style="font-family:var(--font-b);font-size:0.58rem;color:#6080a0;font-weight:700;text-align:center;" id="ready-hint">Tap when set!</div>
+    </div>
+  </div>
+  <div id="ptip">❄️ Tap YOUR zone (blue) to place your unit!</div>
+  <div id="blog"></div>
+</div>
+
+<div id="result-ov">
+  <div class="res-snow" id="res-snow"></div>
+  <div class="res-em" id="res-em">🏆</div>
+  <div class="res-ttl" id="res-ttl">VICTORY!</div>
+  <div class="res-reason" id="res-reason">Enemy base destroyed!</div>
+  <div class="res-row">
+    <div class="res-stat"><div class="res-v pos" id="res-gold">+0</div><div class="res-lbl">💰 Gold</div></div>
+    <div class="res-stat"><div class="res-v pos" id="res-grid">+0</div><div class="res-lbl">🏰 Grids</div></div>
+    <div class="res-stat"><div class="res-v neu" id="res-surv">0</div><div class="res-lbl">⚔️ Survived</div></div>
+  </div>
+  <button class="btn btn-blue btn-bounce" onclick="gameApp.returnToLobby()" style="max-width:290px;font-size:0.92rem;">🏠 Back to Ice Kingdom</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, set, get, onValue, update, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDYBBMh5sDa0pOSwvOW1jtP-tXj17H_bck",
+    authDomain: "hrtelai.firebaseapp.com",
+    databaseURL: "https://hrtelai-default-rtdb.firebaseio.com",
+    projectId: "hrtelai",
+    storageBucket: "hrtelai.firebasestorage.app",
+    messagingSenderId: "784193234857",
+    appId: "1:784193234857:web:5b7bb94fa0c6336bd7c6b8",
+    measurementId: "G-F0TVGBH852"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// ==========================================================================
+// BACKGROUND EFFECTS (STARS & SNOW)
+// ==========================================================================
+(()=>{const sd=document.getElementById('stars');for(let i=0;i<120;i++){const s=document.createElement('div');s.style.cssText=`position:absolute;background:white;border-radius:50%;left:${Math.random()*100}%;top:${Math.random()*60}%;width:${Math.random()*2.5+0.8}px;height:${Math.random()*2.5+0.8}px;opacity:${Math.random()*0.8+0.2};animation:twk ${Math.random()*3+2}s ease-in-out infinite;animation-delay:${Math.random()*3}s;`;sd.appendChild(s);}const st=document.createElement('style');st.textContent='@keyframes twk{0%,100%{opacity:0.15}50%{opacity:1}}';document.head.appendChild(st);})();
+
+const sc=document.getElementById('snowc'),sCtx=sc.getContext('2d');let sW,sH;
+const flakes=[];
+function rSnow(){sW=sc.width=window.innerWidth;sH=sc.height=window.innerHeight;}
+class Flake{constructor(){this.reset();}reset(){this.x=Math.random()*sW;this.y=Math.random()*-sH;this.r=Math.random()*2.8+0.8;this.spd=Math.random()*1.4+0.4;this.vx=Math.random()*0.7-0.35;this.op=Math.random()*0.65+0.2;this.a=Math.random()*Math.PI*2;this.sp=Math.random()*0.04-0.02;}update(){this.y+=this.spd;this.x+=this.vx+Math.sin(this.a)*0.4;this.a+=this.sp;if(this.y>sH+8)this.reset();}draw(){sCtx.globalAlpha=this.op;sCtx.fillStyle='white';sCtx.beginPath();sCtx.arc(this.x,this.y,this.r,0,Math.PI*2);sCtx.fill();}}
+for(let i=0;i<120;i++)flakes.push(new Flake());
+function animSnow(){sCtx.clearRect(0,0,sW,sH);flakes.forEach(f=>{f.update();f.draw();});sCtx.globalAlpha=1;requestAnimationFrame(animSnow);}
+window.addEventListener('resize',rSnow);rSnow();animSnow();
+
+// ==========================================================================
+// DYNAMIC AUDIO ENGINE (WEB AUDIO API)
+// ==========================================================================
+class AudioEngine {
+    constructor() {
+        this.ctx = null;
+        this.lobbyMusicNodes = [];
+        this.isPlayingLobby = false;
+        this.initialized = false;
         
-        <div class="panel-3d" style="background: rgba(10, 0, 20, 0.85); border-color: var(--red-glow); box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(255, 0, 68, 0.2);">
-            <h2 style="color: white; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 0 15px var(--red-glow);">WAR ROOM</h2>
-            
-            <p style="color: #ccc; margin-bottom: 20px; line-height: 1.5;">Expand your city by conquering enemies.<br>Lose battles, lose gold.<br>Master movement tactics for victory.</p>
-            
-            <button class="btn-clash gold" onclick="gameApp.toggleLeaderboard()" style="margin-bottom: 20px; font-size: 1.2rem; padding: 15px;">🏆 VIEW RANKINGS</button>
+        const unlock = () => {
+            if (!this.initialized) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                this.initialized = true;
+                if (engine.phase === 'lobby') this.playLobbyMusic();
+            } else if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        };
+        window.addEventListener('click', unlock, { once: false });
+        window.addEventListener('touchstart', unlock, { once: false });
+    }
 
-            <button class="btn-clash red" id="btn-matchmake" onclick="gameApp.findMatch()" style="font-size: 1.8rem; padding: 25px; letter-spacing: 2px;">FIND OPPONENT</button>
-            <button class="btn-clash gray" id="btn-cancel-match" onclick="gameApp.cancelMatch()" style="display: none; font-size: 1.2rem; padding: 15px; margin-top: 10px;">CANCEL SEARCH</button>
-            
-            <div id="match-status-container" style="display: none; margin-top: 25px;">
-                <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; border-top-color: var(--red-glow); margin: 0 auto 10px auto;"></div>
-                <p id="match-status" style="color: var(--red-glow); font-weight: bold; letter-spacing: 1px;">SEARCHING SATELLITES...</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-profile" class="custom-modal-overlay">
-        <div class="modal-content">
-            <span class="close-btn" onclick="gameApp.toggleProfileModal()">✖</span>
-            <h2 style="color: white; margin-bottom: 10px; font-size: 2rem;">IDENTITY SETTINGS</h2>
-            <p style="color: #aaa; margin-bottom: 20px;">Update your commander name.</p>
-            <input type="text" id="modal-name-input" class="input-field" placeholder="Enter Commander Name" style="margin-bottom: 20px;">
-            <button class="btn-clash glow" onclick="gameApp.saveName()" style="background: linear-gradient(to bottom, #00ff88, #00cc6a);">SAVE IDENTITY</button>
-        </div>
-    </div>
-
-    <div id="modal-leaderboard" class="custom-modal-overlay">
-        <div class="modal-content" style="height: 80vh;">
-            <span class="close-btn" onclick="gameApp.toggleLeaderboard()">✖</span>
-            <h2 style="color: var(--gold); margin-bottom: 5px; font-size: 2.2rem; text-shadow: 0 0 10px var(--gold);">TOP 100 COMMANDERS</h2>
-            <p style="color: #aaa; margin-bottom: 20px;">Global Hall of Fame</p>
-            
-            <div class="rank-tabs">
-                <div class="rank-tab active" id="tab-streak" onclick="gameApp.loadRankings('streak')">⚔️ Streak</div>
-                <div class="rank-tab" id="tab-grids" onclick="gameApp.loadRankings('grids')">🏰 Grids</div>
-                <div class="rank-tab" id="tab-gold" onclick="gameApp.loadRankings('gold')">💰 Gold</div>
-            </div>
-
-            <div class="leaderboard-list" id="leaderboard-list">
-                <p style="color: #666; margin-top: 20px;">Loading Satellites...</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="game-ui">
-        <div class="top-bar">
-            <div>
-                <h3 style="color: var(--red-glow); text-shadow: 0 0 10px red;">ENEMY SECTOR</h3>
-                <p id="enemy-state" style="color: #aaa;">Status: Arranging...</p>
-            </div>
-            
-            <div class="vs-banner">
-                <span class="blue-player" id="vs-my-name">YOU</span>
-                <span class="vs-text">VS</span>
-                <span class="red-player" id="vs-enemy-name">OPPONENT</span>
-            </div>
-
-            <div class="stat-box"><div class="stat-icon">💰</div><span id="game-gold">0</span></div>
-        </div>
-
-        <div class="timer-container">
-            <div id="match-timer">120</div>
-            <div class="phase-text" id="phase-text">PLACEMENT PHASE</div>
-        </div>
-
-        <div id="strength-hud">
-            <div class="strength-wrapper" style="color: var(--blue-glow); text-align: left;">
-                <div class="strength-label" id="blue-str-label">YOU (BLUE)</div>
-                <div class="strength-bar-container" style="border-color: var(--blue-glow);">
-                    <div class="strength-fill" id="blue-strength-bar" style="width: 100%;"></div>
-                </div>
-            </div>
-            <div class="strength-wrapper" style="color: var(--red-glow); text-align: right;">
-                <div class="strength-label" id="red-str-label">OPPONENT (RED)</div>
-                <div class="strength-bar-container" style="border-color: var(--red-glow);">
-                    <div class="strength-fill" id="red-strength-bar" style="width: 100%;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="shop-bar" id="shop-container">
-            <div class="shop-item" onclick="gameApp.selectShopItem('soldier', 10)" id="shop-soldier">
-                <div class="item-icon">⚔️</div><div>Soldier</div><div class="item-cost"><span>10</span>💰</div>
-            </div>
-            <div class="shop-item" onclick="gameApp.selectShopItem('barrier', 15)" id="shop-barrier">
-                <div class="item-icon">🧱</div><div>Barrier</div><div class="item-cost"><span>15</span>💰</div>
-            </div>
-            <div class="shop-item" onclick="gameApp.selectShopItem('defense', 30)" id="shop-defense">
-                <div class="item-icon">🔫</div><div>Cannon</div><div class="item-cost"><span>30</span>💰</div>
-            </div>
-            <div class="shop-item" onclick="gameApp.selectShopItem('arrow', 50)" id="shop-arrow">
-                <div class="item-icon">🏹</div><div>Arrow Volley</div><div class="item-cost"><span>50</span>💰</div>
-            </div>
-        </div>
+    playLobbyMusic() {
+        if (!this.ctx || this.isPlayingLobby) return;
+        this.isPlayingLobby = true;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
         
-        <div id="ready-btn-container">
-            <button class="btn-clash glow" id="btn-ready" onclick="gameApp.declareReady()">READY</button>
-        </div>
+        osc1.type = 'sine'; osc2.type = 'triangle';
+        osc1.frequency.value = 65.41; // C2
+        osc2.frequency.value = 98.00; // G2
+        
+        gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 3);
 
-        <div id="unit-preview"></div>
-    </div>
+        osc1.connect(gain); osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc1.start(); osc2.start();
+        this.lobbyMusicNodes.push({ osc1, osc2, gain });
+    }
 
-    <div id="result-popup">
-        <div class="result-title" id="result-title">VICTORY</div>
-        <div class="result-reason" id="result-reason">OPPONENT BASE DESTROYED</div>
-        <div class="result-stats">
-            Gold: <span id="result-gold" class="stat-change">+500</span> | 
-            Grid Size: <span id="result-grid" class="stat-change">+5</span> | 
-            Units Survived: <span id="result-survived" class="stat-change">12</span>
-        </div>
-        <button class="btn-clash" onclick="gameApp.returnToLobby()" style="max-width: 300px; font-size: 1.5rem;">CONTINUE TO WAR ROOM</button>
-    </div>
+    stopLobbyMusic() {
+        if (!this.isPlayingLobby || !this.ctx) return;
+        this.isPlayingLobby = false;
+        this.lobbyMusicNodes.forEach(node => {
+            node.gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 1);
+            setTimeout(() => { node.osc1.stop(); node.osc2.stop(); }, 1000);
+        });
+        this.lobbyMusicNodes = [];
+    }
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, get, onValue, update, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    playSoldierAttack() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+    }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDYBBMh5sDa0pOSwvOW1jtP-tXj17H_bck",
-            authDomain: "hrtelai.firebaseapp.com",
-            databaseURL: "https://hrtelai-default-rtdb.firebaseio.com",
-            projectId: "hrtelai",
-            storageBucket: "hrtelai.firebasestorage.app",
-            messagingSenderId: "784193234857",
-            appId: "1:784193234857:web:5b7bb94fa0c6336bd7c6b8",
-            measurementId: "G-F0TVGBH852"
+    playCannonFire() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.4);
+    }
+
+    playArrowFire() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(400, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+    }
+    
+    pop() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.09, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.14);
+    }
+    
+    place() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.07, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.18);
+    }
+}
+const sfx = new AudioEngine();
+
+// ==========================================================================
+// UI HELPERS (TOAST & LOGS & TABS)
+// ==========================================================================
+function toast(msg,dur=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function addLog(msg,type='info'){const el=document.getElementById('blog');if(!el)return;el.classList.add('show');const d=document.createElement('div');d.className='blog-e '+type;d.textContent=msg;el.appendChild(d);while(el.children.length>5)el.removeChild(el.firstChild);}
+
+window.swTab=function(t){document.getElementById('tab-in').classList.toggle('active',t==='in');document.getElementById('tab-up').classList.toggle('active',t==='up');document.getElementById('auth-tx').textContent=t==='in'?'ENTER ICE KINGDOM':'JOIN THE BATTLE!';document.getElementById('auth-ic').textContent=t==='in'?'❄️':'⭐';};
+window.selMode=function(m){document.getElementById('card-pvp').classList.toggle('active',m==='pvp');document.getElementById('card-prac').classList.toggle('active',m==='prac');if(m==='prac')toast('⚠️ Training coming soon!');};
+
+document.querySelectorAll('.btn').forEach(btn=>{btn.addEventListener('click',function(e){const r=document.createElement('span');const rect=this.getBoundingClientRect();const sz=Math.max(rect.width,rect.height);r.style.cssText=`position:absolute;width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px;background:rgba(255,255,255,0.28);border-radius:50%;transform:scale(0);animation:ripple 0.5s linear;pointer-events:none;`;this.style.overflow='hidden';this.appendChild(r);setTimeout(()=>r.remove(),500);});});
+const rS=document.createElement('style');rS.textContent='@keyframes ripple{to{transform:scale(4);opacity:0}}';document.head.appendChild(rS);
+
+// ==========================================================================
+// CANVAS ENGINE (PURE LOGIC PRESERVED + ICE THEME DRAWING)
+// ==========================================================================
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+
+let TILE_SIZE = 45;
+const COLS = 8;
+const ROWS = 5; 
+const TOTAL_ROWS = ROWS * 2; 
+let BOARD_W = COLS * TILE_SIZE;
+let BOARD_H = TOTAL_ROWS * TILE_SIZE;
+
+class Particle {
+    constructor(x, y, color, speed = 2, size = 3, type = 'normal') {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * speed * 2;
+        this.vy = (Math.random() - 0.5) * speed * 2;
+        this.color = color;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.05 + 0.02;
+        this.size = size;
+        this.type = type; 
+        this.gravity = type === 'fire' ? 0.08 : 0;
+        this.rotation = Math.random() * Math.PI * 2;
+    }
+    update() { 
+        this.x += this.vx; this.y += this.vy; this.vy += this.gravity;
+        this.life -= this.decay; this.rotation += 0.1;
+    }
+    draw(ctx, offsetX, offsetY) {
+        if (this.life <= 0) return;
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        if (this.type === 'spark') {
+            ctx.fillRect(this.x + offsetX - this.size/2, this.y + offsetY - this.size/2, this.size, this.size);
+        } else if (this.type === 'glow') {
+            ctx.shadowColor = this.color; ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+class Projectile {
+    constructor(x, y, vx, vy, damage, team, type = 'arrow') {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.damage = damage;
+        this.team = team; this.type = type; this.life = 120;
+        this.trail = []; this.angle = Math.atan2(vy, vx);
+        this.glowIntensity = 1.0;
+    }
+    update(engine) {
+        this.trail.push({x: this.x, y: this.y});
+        if (this.trail.length > 12) this.trail.shift();
+        this.x += this.vx; this.y += this.vy; this.life--;
+        this.glowIntensity = Math.sin(Date.now() / 80) * 0.3 + 0.7;
+
+        for (let i = engine.entities.length - 1; i >= 0; i--) {
+            const e = engine.entities[i];
+            if (e.team !== this.team && !e.isDead) {
+                const dx = e.x - this.x; const dy = e.y - this.y;
+                if (Math.hypot(dx, dy) < 18) {
+                    e.takeDamage(this.damage, engine);
+                    const pColor = (this.team === gameApp.myRole) ? '#a8d8ff' : '#ffb8b8';
+                    engine.spawnParticles(this.x, this.y, pColor, 12, 4, 'spark');
+                    this.life = 0; return;
+                }
+            }
+        }
+    }
+    draw(ctx, offsetX, offsetY) {
+        if (this.life <= 0) return;
+        const px = this.x + offsetX; const py = this.y + offsetY;
+        const isMe = (this.team === gameApp.myRole);
+        const teamColor = isMe ? '#1a7fd4' : '#e74c3c';
+
+        ctx.globalAlpha = 0.6; ctx.strokeStyle = teamColor; ctx.lineWidth = 3;
+        ctx.beginPath();
+        this.trail.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x + offsetX, p.y + offsetY);
+            else ctx.lineTo(p.x + offsetX, p.y + offsetY);
+        });
+        ctx.stroke(); ctx.globalAlpha = 1.0;
+
+        ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle);
+        ctx.shadowColor = isMe ? '#6ab8ff' : '#ff9090'; ctx.shadowBlur = 15 * this.glowIntensity;
+        ctx.fillStyle = this.type === 'arrow' ? '#ffe066' : '#aabbc0';
+        ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -8); ctx.lineTo(-8, 8); ctx.fill();
+        ctx.restore();
+    }
+}
+
+class FloatingText {
+    constructor(x, y, text, color, size = 16, crit = false) {
+        this.x = x; this.y = y; this.text = text; this.color = color;
+        this.life = 1.0; this.vy = crit ? -2.5 : -1.2; this.size = size; this.crit = crit;
+    }
+    update() { this.y += this.vy; this.life -= 0.022; }
+    draw(ctx, offsetX, offsetY) {
+        if(this.life <= 0) return;
+        ctx.globalAlpha = this.life; ctx.fillStyle = this.color; 
+        ctx.font = `${this.crit ? 'bold ' : ''}${this.size}px 'Nunito'`; ctx.textAlign = 'center';
+        ctx.shadowColor = this.color; ctx.shadowBlur = this.crit ? 12 : 6;
+        ctx.fillText(this.text, this.x + offsetX, this.y + offsetY);
+        ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
+    }
+}
+
+class Entity {
+    constructor(r, c, team, type) {
+        this.team = team; this.type = type;
+        this.x = c * TILE_SIZE + TILE_SIZE/2; this.y = r * TILE_SIZE + TILE_SIZE/2;
+        this.vx = 0; this.vy = 0; this.target = null; this.isDead = false;
+        this.animationFrame = 0; this.bob = 0; this.angle = 0;
+        
+        switch(type) {
+            case 'main': this.hp = 2000; this.maxHp = 2000; this.damage = 0; this.range = 0; this.speed = 0; this.cooldownMax = 0; break;
+            case 'barrier': this.hp = 800; this.maxHp = 800; this.damage = 0; this.range = 0; this.speed = 0; this.cooldownMax = 0; break;
+            case 'defense': this.hp = 400; this.maxHp = 400; this.damage = 40; this.range = 180; this.speed = 0; this.cooldownMax = 90; break;
+            case 'soldier': this.hp = 150; this.maxHp = 150; this.damage = 28; this.range = 32; this.speed = 1.35; this.cooldownMax = 45; break;
+            case 'arrow': this.hp = 55; this.maxHp = 55; this.damage = 65; this.range = 320; this.speed = 2.8; this.cooldownMax = 180; break;
+        }
+        this.cooldown = 0; this.velFriction = 0.92; this.hitFlash = 0;
+    }
+
+    update(engine) {
+        if (this.isDead || engine.phase !== 'battle') return;
+        this.animationFrame = (this.animationFrame + 0.18) % 4;
+        this.bob = Math.sin(this.animationFrame * Math.PI) * 3;
+        if (this.hitFlash > 0) this.hitFlash--;
+
+        if (!this.target || this.target.isDead) {
+            let minDist = Infinity; let newTarget = null;
+            engine.entities.forEach(e => {
+                if (e.team !== this.team && !e.isDead) {
+                    let dist = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (e.type === 'main') dist *= 0.65;
+                    if (dist < minDist) { minDist = dist; newTarget = e; }
+                }
+            });
+            this.target = newTarget;
+        }
+
+        if (this.target && this.speed > 0) {
+            let dx = this.target.x - this.x; let dy = this.target.y - this.y;
+            let dist = Math.hypot(dx, dy);
+
+            if (dist > this.range) {
+                const desiredVx = (dx / dist) * this.speed; const desiredVy = (dy / dist) * this.speed;
+                this.vx = this.vx * this.velFriction + desiredVx * 0.18;
+                this.vy = this.vy * this.velFriction + desiredVy * 0.18;
+                
+                engine.entities.forEach(other => {
+                    if (other !== this && other.team === this.team && !other.isDead && other.speed > 0) {
+                        let odx = other.x - this.x; let ody = other.y - this.y;
+                        let odist = Math.hypot(odx, ody);
+                        if (odist < 28 && odist > 0) { this.vx -= (odx / odist) * 1.4; this.vy -= (ody / odist) * 1.4; }
+                    }
+                });
+
+                this.x += this.vx; this.y += this.vy; this.angle = Math.atan2(this.vy, this.vx);
+            } else if (dist <= this.range) {
+                if (this.cooldown <= 0) {
+                    this.cooldown = this.cooldownMax;
+                    if (this.type === 'soldier') {
+                        sfx.playSoldierAttack();
+                        this.target.takeDamage(this.damage, engine);
+                        engine.spawnParticles(this.target.x, this.target.y, '#ffe066', 8, 3);
+                    } else if (this.type === 'defense' || this.type === 'arrow') {
+                        if(this.type === 'defense') sfx.playCannonFire();
+                        else sfx.playArrowFire();
+                        const px = this.x + Math.cos(this.angle) * 12; const py = this.y + Math.sin(this.angle) * 12;
+                        const pdx = this.target.x - px; const pdy = this.target.y - py;
+                        const pdist = Math.hypot(pdx, pdy) || 1;
+                        const pSpeed = this.type === 'arrow' ? 7.5 : 5.2;
+                        const pvx = (pdx / pdist) * pSpeed; const pvy = (pdy / pdist) * pSpeed;
+                        engine.projectiles.push(new Projectile(px, py, pvx, pvy, this.damage, this.team, this.type === 'arrow' ? 'arrow' : 'cannon'));
+                    }
+                }
+            }
+        }
+        if (this.cooldown > 0) this.cooldown--;
+    }
+
+    takeDamage(amt, engine) {
+        this.hp -= amt;
+        this.hitFlash = 6;
+        const isCrit = Math.random() > 0.85;
+        engine.floatingTexts.push(new FloatingText(this.x, this.y - 20, `-${Math.floor(amt)}`, isCrit ? '#ff6b35' : '#e74c3c', isCrit ? 22 : 16, isCrit));
+        if (this.hp <= 0) {
+            this.isDead = true;
+            const pColor = (this.team === gameApp.myRole) ? '#a8d8ff' : '#ffb8b8';
+            engine.spawnParticles(this.x, this.y, pColor, 28, 6, this.type === 'main' ? 'fire' : 'normal');
+            
+            if (this.type === 'main') {
+                const winningTeam = (this.team === 'blue') ? 'red' : 'blue';
+                engine.triggerGameEnd(winningTeam, "BASE CONQUERED!");
+                addLog(this.type.toUpperCase() + ' defeated! ❄', 'kill');
+            }
+        }
+    }
+
+    draw(ctx, offsetX, offsetY) {
+        if (this.isDead) return;
+        let px = this.x + offsetX; 
+        let py = this.y + offsetY + this.bob;
+        
+        const isMe = (this.team === gameApp.myRole);
+        const tc = isMe ? '#1a7fd4' : '#e74c3c';
+        const fl = this.hitFlash > 0;
+        
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = 'rgba(0,50,120,0.5)';
+        ctx.beginPath(); ctx.ellipse(px, py + TILE_SIZE/3, TILE_SIZE/3, TILE_SIZE/7, 0, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        ctx.lineWidth = 2.5;
+        if (this.type === 'main') {
+            const hw = TILE_SIZE * 0.82;
+            ctx.shadowColor = tc; ctx.shadowBlur = fl ? 18 : 9;
+            ctx.fillStyle = fl ? '#fff' : (isMe ? '#ddf0ff' : '#ffe8e8');
+            ctx.strokeStyle = tc;
+            if (ctx.roundRect) {
+                ctx.beginPath(); ctx.roundRect(px - hw/2, py - hw/2, hw, hw, 9); ctx.fill(); ctx.stroke();
+            } else {
+                ctx.fillRect(px - hw/2, py - hw/2, hw, hw); ctx.strokeRect(px - hw/2, py - hw/2, hw, hw);
+            }
+            ctx.shadowBlur = 0;
+            ctx.font = `${TILE_SIZE * 0.65}px Arial`; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+9);
+        } else if (this.type === 'barrier') {
+            ctx.shadowColor = fl ? '#fff' : '#a8d8ff'; ctx.shadowBlur = fl ? 13 : 5;
+            ctx.fillStyle = fl ? '#fff' : 'rgba(175,228,255,0.85)';
+            ctx.strokeStyle = 'rgba(100,180,255,0.75)'; ctx.lineWidth = 2.2;
+            const hw = TILE_SIZE * 0.4;
+            if (ctx.roundRect) {
+                ctx.beginPath(); ctx.roundRect(px - hw, py - hw, hw*2, hw*2, 5); ctx.fill(); ctx.stroke();
+            } else {
+                ctx.fillRect(px - hw, py - hw, hw*2, hw*2); ctx.strokeRect(px - hw, py - hw, hw*2, hw*2);
+            }
+            ctx.shadowBlur = 0;
+            ctx.font = `${TILE_SIZE * 0.46}px Arial`; ctx.textAlign = 'center'; ctx.fillText('🧊', px, py+7);
+        } else if (this.type === 'defense') {
+            ctx.shadowColor = tc; ctx.shadowBlur = fl ? 18 : 7;
+            ctx.fillStyle = fl ? '#fff' : (isMe ? '#ddf0ff' : '#ffe8e8');
+            ctx.strokeStyle = tc; ctx.lineWidth = 2.2;
+            ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.36, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle || 0);
+            ctx.fillStyle = isMe ? '#6ab8ff' : '#ff9090';
+            if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(9, -4, 20, 9, 3); ctx.fill(); }
+            else { ctx.fillRect(9, -4, 20, 9); }
+            ctx.restore();
+            ctx.font = `${TILE_SIZE * 0.36}px Arial`; ctx.textAlign = 'center'; ctx.fillText('🔫', px, py+5);
+        } else if (this.type === 'soldier') {
+            ctx.shadowColor = tc; ctx.shadowBlur = fl ? 14 : 4;
+            ctx.fillStyle = fl ? '#fff' : (isMe ? '#4aa8e8' : '#e87070');
+            ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.arc(px, py-2, TILE_SIZE*0.24, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.shadowBlur = 0;
+            const legOffset = Math.sin(this.animationFrame * 2) * 5.5;
+            ctx.strokeStyle = isMe ? '#2090d8' : '#d86060'; ctx.lineWidth = 2.8; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(px - 5, py + 8); ctx.lineTo(px - 5 + legOffset, py + 18);
+            ctx.moveTo(px + 5, py + 8); ctx.lineTo(px + 5 - legOffset, py + 18);
+            ctx.stroke();
+            ctx.font = `${TILE_SIZE * 0.28}px Arial`; ctx.textAlign = 'center'; ctx.fillText('⚔️', px, py + 4);
+        } else if (this.type === 'arrow') {
+            ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle || 0);
+            const sc = TILE_SIZE / 45; ctx.scale(sc, sc);
+            ctx.shadowColor = fl ? '#fff' : '#ffe066'; ctx.shadowBlur = fl ? 18 : 13; 
+            ctx.fillStyle = '#ffe066';
+            ctx.beginPath(); ctx.moveTo(17, 0); ctx.lineTo(-11, -8); ctx.lineTo(-6, 0); ctx.lineTo(-11, 8); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(168,230,255,0.65)'; ctx.fillRect(-13, -1, 9, 2);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
+
+        if (this.hp < this.maxHp) {
+            let hw = TILE_SIZE * 0.78; let hy = py - TILE_SIZE/2 - 13;
+            ctx.beginPath();
+            if(ctx.roundRect) ctx.roundRect(px - hw/2, hy, hw, 5, 3); else ctx.rect(px - hw/2, hy, hw, 5);
+            ctx.fillStyle = 'rgba(200,50,50,0.65)'; ctx.fill();
+            
+            ctx.beginPath();
+            if(ctx.roundRect) ctx.roundRect(px - hw/2, hy, hw * (this.hp/this.maxHp), 5, 3); else ctx.rect(px - hw/2, hy, hw * (this.hp/this.maxHp), 5);
+            ctx.fillStyle = this.hp > this.maxHp * 0.4 ? '#5de8a8' : '#ffe066'; ctx.fill();
+        }
+    }
+}
+
+class GameEngine {
+    constructor() {
+        this.entities = []; this.particles = []; this.floatingTexts = []; this.projectiles = [];
+        this.phase = 'lobby'; 
+        this.offsetX = 0; this.offsetY = 0; this.flipY = false;
+        this.maxMeHp = 1; this.maxOppHp = 1;
+        canvas.addEventListener('click', (e) => this.handleClick(e));
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+        requestAnimationFrame(() => this.loop());
+    }
+
+    resize() {
+        width = window.innerWidth; height = window.innerHeight;
+        canvas.width = width; canvas.height = height;
+
+        if (width <= 768) {
+            let availW = width - 40; let availH = height - 190;
+            TILE_SIZE = Math.min(Math.floor(availW / COLS), Math.floor(availH / TOTAL_ROWS), 45);
+        } else {
+            TILE_SIZE = 45;
+        }
+
+        BOARD_W = COLS * TILE_SIZE; BOARD_H = TOTAL_ROWS * TILE_SIZE;
+        this.offsetX = (width - BOARD_W) / 2;
+        this.offsetY = (height - BOARD_H) / 2 + 10;
+    }
+
+    startPlacement() {
+        this.phase = 'placement';
+        this.entities = [new Entity(0, 3.5, 'red', 'main'), new Entity(9, 3.5, 'blue', 'main')];
+        this.projectiles = []; this.particles = []; this.floatingTexts = [];
+        canvas.classList.remove('zoom-battle');
+        sfx.stopLobbyMusic(); 
+    }
+
+    prepareBattle(redBoard, blueBoard) {
+        this.phase = 'reveal';
+        this.entities = [new Entity(0, 3.5, 'red', 'main'), new Entity(9, 3.5, 'blue', 'main')];
+        this.projectiles = [];
+
+        const parseBoard = (boardObj, team, rowOffset) => {
+            if(!boardObj) return;
+            for(let i=0; i<40; i++) {
+                let item = boardObj[i];
+                if (item) {
+                    let r = Math.floor(i / COLS) + rowOffset;
+                    let c = i % COLS;
+                    if (!((team === 'red' && r===0 && (c===3||c===4)) || (team==='blue' && r===9 && (c===3||c===4)))) {
+                        this.entities.push(new Entity(r, c, team, item));
+                    }
+                }
+            }
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        parseBoard(redBoard, 'red', 0);
+        parseBoard(blueBoard, 'blue', 5);
 
-        // ==========================================================================
-        // DYNAMIC AUDIO ENGINE (WEB AUDIO API)
-        // ==========================================================================
-        class AudioEngine {
-            constructor() {
-                this.ctx = null;
-                this.lobbyMusicNodes = [];
-                this.isPlayingLobby = false;
-                this.initialized = false;
-                
-                // Unlock audio context on any user interaction
-                const unlock = () => {
-                    if (!this.initialized) {
-                        const AudioContext = window.AudioContext || window.webkitAudioContext;
-                        this.ctx = new AudioContext();
-                        this.initialized = true;
-                        if (engine.phase === 'lobby') this.playLobbyMusic();
-                    } else if (this.ctx && this.ctx.state === 'suspended') {
-                        this.ctx.resume();
-                    }
-                };
-                window.addEventListener('click', unlock, { once: false });
-                window.addEventListener('touchstart', unlock, { once: false });
-            }
+        this.maxMeHp = this.entities.filter(e => e.team === gameApp.myRole).reduce((sum, e) => sum + e.maxHp, 0) || 1;
+        this.maxOppHp = this.entities.filter(e => e.team !== gameApp.myRole).reduce((sum, e) => sum + e.maxHp, 0) || 1;
+        addLog('❄️ All units deployed! Fight!', 'info');
+    }
 
-            playLobbyMusic() {
-                if (!this.ctx || this.isPlayingLobby) return;
-                this.isPlayingLobby = true;
-                const osc1 = this.ctx.createOscillator();
-                const osc2 = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc1.type = 'sine'; osc2.type = 'triangle';
-                osc1.frequency.value = 65.41; // C2
-                osc2.frequency.value = 98.00; // G2
-                
-                gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 3); // Fade in
+    spawnParticles(x, y, color, count, size=3, type='normal') {
+        for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.5, size, type));
+    }
 
-                osc1.connect(gain); osc2.connect(gain);
-                gain.connect(this.ctx.destination);
-                
-                osc1.start(); osc2.start();
-                this.lobbyMusicNodes.push({ osc1, osc2, gain });
-            }
+    handleClick(e) {
+        if (this.phase !== 'placement' || !gameApp.selectedUnit) return;
 
-            stopLobbyMusic() {
-                if (!this.isPlayingLobby || !this.ctx) return;
-                this.isPlayingLobby = false;
-                this.lobbyMusicNodes.forEach(node => {
-                    node.gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 1);
-                    setTimeout(() => { node.osc1.stop(); node.osc2.stop(); }, 1000);
-                });
-                this.lobbyMusicNodes = [];
-            }
+        let rect = canvas.getBoundingClientRect();
+        let mouseX = e.clientX - rect.left - this.offsetX;
+        let mouseY = e.clientY - rect.top - this.offsetY;
 
-            playSoldierAttack() {
-                if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
-            }
+        let visual_r = Math.floor(mouseY / TILE_SIZE); let visual_c = Math.floor(mouseX / TILE_SIZE);
+        let r = this.flipY ? (TOTAL_ROWS - 1 - visual_r) : visual_r;
+        let c = visual_c;
 
-            playCannonFire() {
-                if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.4);
-            }
+        if (c < 0 || c >= COLS || r < 0 || r >= TOTAL_ROWS) return;
 
-            playArrowFire() {
-                if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(400, this.ctx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
-            }
+        let myRowStart = gameApp.myRole === 'blue' ? 5 : 0;
+        let myRowEnd = gameApp.myRole === 'blue' ? 9 : 4;
+
+        if (r >= myRowStart && r <= myRowEnd) {
+            let localR = r - myRowStart;
+            let gridIndex = (localR * COLS) + c;
+            if (localR === (gameApp.myRole === 'blue'?4:0) && (c===3||c===4)) return;
+            gameApp.placeUnit(gridIndex, r, c);
         }
-        const sfx = new AudioEngine();
+    }
 
-        // ==========================================================================
-        // CANVAS ENGINE
-        // ==========================================================================
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height;
+    triggerGameEnd(winnerTeam, reason) {
+        if (this.phase === 'end' || this.phase === 'end_v') return;
+        this.phase = 'end';
+        update(ref(db, `matches/${gameApp.matchId}`), {
+            status: 'finished', winnerRole: winnerTeam, endReason: reason
+        });
+    }
 
-        let TILE_SIZE = 45;
-        const COLS = 8;
-        const ROWS = 5; 
-        const TOTAL_ROWS = ROWS * 2; 
-        let BOARD_W = COLS * TILE_SIZE;
-        let BOARD_H = TOTAL_ROWS * TILE_SIZE;
+    triggerGameEndLocal(winnerTeam, reason) {
+        if (this.phase === 'end_v') return;
+        this.phase = 'end_v';
+        setTimeout(() => gameApp.endGame(winnerTeam, reason), 2200);
+    }
 
-        class Particle {
-            constructor(x, y, color, speed = 2, size = 3, type = 'normal') {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * speed * 2;
-                this.vy = (Math.random() - 0.5) * speed * 2;
-                this.color = color;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.05 + 0.02;
-                this.size = size;
-                this.type = type; 
-                this.gravity = type === 'fire' ? 0.08 : 0;
-                this.rotation = Math.random() * Math.PI * 2;
-            }
-            update() { 
-                this.x += this.vx; this.y += this.vy; this.vy += this.gravity;
-                this.life -= this.decay; this.rotation += 0.1;
-            }
-            draw(ctx, offsetX, offsetY) {
-                if (this.life <= 0) return;
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                if (this.type === 'spark') {
-                    ctx.fillRect(this.x + offsetX - this.size/2, this.y + offsetY - this.size/2, this.size, this.size);
-                } else if (this.type === 'glow') {
-                    ctx.shadowColor = this.color; ctx.shadowBlur = 20;
-                    ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
-                    ctx.shadowBlur = 0;
-                } else {
-                    ctx.beginPath(); ctx.arc(this.x + offsetX, this.y + offsetY, this.size, 0, Math.PI * 2); ctx.fill();
-                }
-                ctx.globalAlpha = 1.0;
-            }
+    loop() {
+        if (this.phase === 'lobby') {
+            ctx.clearRect(0, 0, width, height);
+            requestAnimationFrame(() => this.loop());
+            return;
         }
 
-        class Projectile {
-            constructor(x, y, vx, vy, damage, team, type = 'arrow') {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.damage = damage;
-                this.team = team; this.type = type; this.life = 120;
-                this.trail = []; this.angle = Math.atan2(vy, vx);
-                this.glowIntensity = 1.0;
-            }
-            update(engine) {
-                this.trail.push({x: this.x, y: this.y});
-                if (this.trail.length > 12) this.trail.shift();
-                this.x += this.vx; this.y += this.vy; this.life--;
-                this.glowIntensity = Math.sin(Date.now() / 80) * 0.3 + 0.7;
+        ctx.fillStyle = 'rgba(200, 235, 255, 0.12)'; ctx.fillRect(0, 0, width, height);
 
-                for (let i = engine.entities.length - 1; i >= 0; i--) {
-                    const e = engine.entities[i];
-                    if (e.team !== this.team && !e.isDead) {
-                        const dx = e.x - this.x; const dy = e.y - this.y;
-                        if (Math.hypot(dx, dy) < 18) {
-                            e.takeDamage(this.damage, engine);
-                            const pColor = (this.team === gameApp.myRole) ? '#00e5ff' : '#ff0044';
-                            engine.spawnParticles(this.x, this.y, pColor, 12, 4, 'spark');
-                            this.life = 0; return;
-                        }
-                    }
+        for (let r = 0; r < TOTAL_ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                let x = c * TILE_SIZE + this.offsetX; let y = r * TILE_SIZE + this.offsetY;
+                const renderAsEnemyZone = this.flipY ? (r > 4) : (r < 5);
+                if (renderAsEnemyZone) { 
+                    ctx.fillStyle = 'rgba(255, 120, 120, 0.07)'; ctx.strokeStyle = 'rgba(220, 100, 100, 0.18)'; 
+                } else { 
+                    ctx.fillStyle = 'rgba(100, 180, 255, 0.07)'; ctx.strokeStyle = 'rgba(80, 160, 255, 0.18)'; 
                 }
-            }
-            draw(ctx, offsetX, offsetY) {
-                if (this.life <= 0) return;
-                const px = this.x + offsetX; const py = this.y + offsetY;
-                const isMe = (this.team === gameApp.myRole);
-                const teamColor = isMe ? '#00e5ff' : '#ff0044';
-
-                ctx.globalAlpha = 0.6; ctx.strokeStyle = teamColor; ctx.lineWidth = 3;
-                ctx.beginPath();
-                this.trail.forEach((p, i) => {
-                    if (i === 0) ctx.moveTo(p.x + offsetX, p.y + offsetY);
-                    else ctx.lineTo(p.x + offsetX, p.y + offsetY);
-                });
-                ctx.stroke(); ctx.globalAlpha = 1.0;
-
-                ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle);
-                ctx.shadowColor = teamColor; ctx.shadowBlur = 15 * this.glowIntensity;
-                ctx.fillStyle = this.type === 'arrow' ? '#ffcf33' : '#aaa';
-                ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -8); ctx.lineTo(-8, 8); ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        class FloatingText {
-            constructor(x, y, text, color, size = 16, crit = false) {
-                this.x = x; this.y = y; this.text = text; this.color = color;
-                this.life = 1.0; this.vy = crit ? -2.5 : -1.2; this.size = size; this.crit = crit;
-            }
-            update() { this.y += this.vy; this.life -= 0.022; }
-            draw(ctx, offsetX, offsetY) {
-                if(this.life <= 0) return;
-                ctx.globalAlpha = this.life; ctx.fillStyle = this.color; 
-                ctx.font = `${this.crit ? 'bold ' : ''}${this.size}px Arial`; ctx.textAlign = 'center';
-                ctx.shadowColor = this.color; ctx.shadowBlur = this.crit ? 12 : 6;
-                ctx.fillText(this.text, this.x + offsetX, this.y + offsetY);
-                ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
-            }
-        }
-
-        class Entity {
-            constructor(r, c, team, type) {
-                this.team = team; this.type = type;
-                this.x = c * TILE_SIZE + TILE_SIZE/2; this.y = r * TILE_SIZE + TILE_SIZE/2;
-                this.vx = 0; this.vy = 0; this.target = null; this.isDead = false;
-                this.animationFrame = 0; this.bob = 0; this.angle = 0;
-                
-                switch(type) {
-                    case 'main': this.hp = 2000; this.maxHp = 2000; this.damage = 0; this.range = 0; this.speed = 0; this.cooldownMax = 0; break;
-                    case 'barrier': this.hp = 800; this.maxHp = 800; this.damage = 0; this.range = 0; this.speed = 0; this.cooldownMax = 0; break;
-                    case 'defense': this.hp = 400; this.maxHp = 400; this.damage = 40; this.range = 180; this.speed = 0; this.cooldownMax = 90; break;
-                    case 'soldier': this.hp = 150; this.maxHp = 150; this.damage = 28; this.range = 32; this.speed = 1.35; this.cooldownMax = 45; break;
-                    case 'arrow': this.hp = 55; this.maxHp = 55; this.damage = 65; this.range = 320; this.speed = 2.8; this.cooldownMax = 180; break;
-                }
-                this.cooldown = 0; this.velFriction = 0.92;
-            }
-
-            update(engine) {
-                if (this.isDead || engine.phase !== 'battle') return;
-                this.animationFrame = (this.animationFrame + 0.18) % 4;
-                this.bob = Math.sin(this.animationFrame * Math.PI) * 3;
-
-                if (!this.target || this.target.isDead) {
-                    let minDist = Infinity; let newTarget = null;
-                    engine.entities.forEach(e => {
-                        if (e.team !== this.team && !e.isDead) {
-                            let dist = Math.hypot(e.x - this.x, e.y - this.y);
-                            if (e.type === 'main') dist *= 0.65;
-                            if (dist < minDist) { minDist = dist; newTarget = e; }
-                        }
-                    });
-                    this.target = newTarget;
-                }
-
-                if (this.target && this.speed > 0) {
-                    let dx = this.target.x - this.x; let dy = this.target.y - this.y;
-                    let dist = Math.hypot(dx, dy);
-
-                    if (dist > this.range) {
-                        const desiredVx = (dx / dist) * this.speed; const desiredVy = (dy / dist) * this.speed;
-                        this.vx = this.vx * this.velFriction + desiredVx * 0.18;
-                        this.vy = this.vy * this.velFriction + desiredVy * 0.18;
-                        
-                        engine.entities.forEach(other => {
-                            if (other !== this && other.team === this.team && !other.isDead && other.speed > 0) {
-                                let odx = other.x - this.x; let ody = other.y - this.y;
-                                let odist = Math.hypot(odx, ody);
-                                if (odist < 28 && odist > 0) { this.vx -= (odx / odist) * 1.4; this.vy -= (ody / odist) * 1.4; }
-                            }
-                        });
-
-                        this.x += this.vx; this.y += this.vy; this.angle = Math.atan2(this.vy, this.vx);
-                    } else if (dist <= this.range) {
-                        if (this.cooldown <= 0) {
-                            this.cooldown = this.cooldownMax;
-                            if (this.type === 'soldier') {
-                                sfx.playSoldierAttack();
-                                this.target.takeDamage(this.damage, engine);
-                                engine.spawnParticles(this.target.x, this.target.y, '#ffcf33', 8, 3);
-                            } else if (this.type === 'defense' || this.type === 'arrow') {
-                                if(this.type === 'defense') sfx.playCannonFire();
-                                else sfx.playArrowFire();
-                                const px = this.x + Math.cos(this.angle) * 12; const py = this.y + Math.sin(this.angle) * 12;
-                                const pdx = this.target.x - px; const pdy = this.target.y - py;
-                                const pdist = Math.hypot(pdx, pdy) || 1;
-                                const pSpeed = this.type === 'arrow' ? 7.5 : 5.2;
-                                const pvx = (pdx / pdist) * pSpeed; const pvy = (pdy / pdist) * pSpeed;
-                                engine.projectiles.push(new Projectile(px, py, pvx, pvy, this.damage, this.team, this.type === 'arrow' ? 'arrow' : 'cannon'));
-                            }
-                        }
-                    }
-                }
-                if (this.cooldown > 0) this.cooldown--;
-            }
-
-            takeDamage(amt, engine) {
-                this.hp -= amt;
-                const isCrit = Math.random() > 0.85;
-                engine.floatingTexts.push(new FloatingText(this.x, this.y - 20, `-${Math.floor(amt)}`, '#ff3333', isCrit ? 22 : 16, isCrit));
-                if (this.hp <= 0) {
-                    this.isDead = true;
-                    const pColor = (this.team === gameApp.myRole) ? '#00e5ff' : '#ff0044';
-                    engine.spawnParticles(this.x, this.y, pColor, 28, 6, this.type === 'main' ? 'fire' : 'normal');
-                    
-                    if (this.type === 'main') {
-                        const winningTeam = (this.team === 'blue') ? 'red' : 'blue';
-                        engine.triggerGameEnd(winningTeam, "BASE DESTROYED");
-                    }
-                }
-            }
-
-            draw(ctx, offsetX, offsetY) {
-                if (this.isDead) return;
-                let px = this.x + offsetX; 
-                let py = this.y + offsetY + this.bob;
-                
-                const isMe = (this.team === gameApp.myRole);
-                const glowColor = isMe ? '#00e5ff' : '#ff0044';
-                const darkColor = isMe ? '#0a3a5a' : '#5a0a1a';
-                const midColor = isMe ? '#00bfff' : '#ff3366';
-
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.beginPath(); ctx.ellipse(px, py + TILE_SIZE/3, TILE_SIZE/3, TILE_SIZE/6, 0, 0, Math.PI*2); ctx.fill();
-
-                ctx.lineWidth = 2.5;
-                if (this.type === 'main') {
-                    ctx.fillStyle = darkColor; ctx.strokeStyle = glowColor;
-                    ctx.fillRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
-                    ctx.strokeRect(px - TILE_SIZE*0.8, py - TILE_SIZE*0.8, TILE_SIZE*1.6, TILE_SIZE*1.6);
-                    ctx.fillStyle = '#fff'; ctx.font = `${TILE_SIZE * 0.7}px Arial`; ctx.textAlign = 'center'; ctx.fillText('🏰', px, py+10);
-                } else if (this.type === 'barrier') {
-                    ctx.fillStyle = '#444'; ctx.strokeStyle = '#888';
-                    ctx.fillRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
-                    ctx.strokeRect(px - TILE_SIZE*0.4, py - TILE_SIZE*0.4, TILE_SIZE*0.8, TILE_SIZE*0.8);
-                } else if (this.type === 'defense') {
-                    ctx.fillStyle = '#222'; ctx.strokeStyle = glowColor;
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = `${TILE_SIZE * 0.4}px Arial`; ctx.fillText('🔫', px, py+7);
-                    ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle || 0);
-                    ctx.fillStyle = '#ccc'; ctx.fillRect(12, -4, 18, 8); ctx.restore();
-                } else if (this.type === 'soldier') {
-                    ctx.fillStyle = midColor;
-                    ctx.beginPath(); ctx.arc(px, py, TILE_SIZE*0.25, 0, Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
-                    const legOffset = Math.sin(this.animationFrame * 2) * 6;
-                    ctx.beginPath();
-                    ctx.moveTo(px - 8, py + 12); ctx.lineTo(px - 8 + legOffset, py + 22);
-                    ctx.moveTo(px + 8, py + 12); ctx.lineTo(px + 8 - legOffset, py + 22);
-                    ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = `${TILE_SIZE * 0.35}px Arial`; ctx.fillText('⚔️', px, py + 6);
-                } else if (this.type === 'arrow') {
-                    ctx.save(); ctx.translate(px, py); ctx.rotate(this.angle || 0);
-                    const sc = TILE_SIZE / 45; ctx.scale(sc, sc);
-                    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 18; ctx.fillStyle = '#ffd700';
-                    ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-14, -11); ctx.lineTo(-8, 0); ctx.lineTo(-14, 11); ctx.closePath(); ctx.fill();
-                    ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
-                    ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-14, -11); ctx.lineTo(-8, 0); ctx.lineTo(-14, 11); ctx.closePath(); ctx.fill();
-                    ctx.restore();
-                }
-
-                if (this.hp < this.maxHp) {
-                    let hw = TILE_SIZE * 0.75;
-                    ctx.fillStyle = 'rgba(255,0,0,0.9)'; ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw, 6);
-                    ctx.fillStyle = this.hp > this.maxHp * 0.4 ? '#0f0' : '#ff0';
-                    ctx.fillRect(px - hw/2, py - TILE_SIZE/2 - 14, hw * (this.hp/this.maxHp), 6);
-                }
-            }
-        }
-
-        class GameEngine {
-            constructor() {
-                this.entities = []; this.particles = []; this.floatingTexts = []; this.projectiles = [];
-                this.phase = 'lobby'; 
-                this.offsetX = 0; this.offsetY = 0; this.flipY = false;
-                this.maxBlueHp = 1; this.maxRedHp = 1;
-                canvas.addEventListener('click', (e) => this.handleClick(e));
-                window.addEventListener('resize', () => this.resize());
-                this.resize();
-                requestAnimationFrame(() => this.loop());
-            }
-
-            resize() {
-                width = window.innerWidth; height = window.innerHeight;
-                canvas.width = width; canvas.height = height;
-
-                if (width <= 768) {
-                    let availW = width - 120; let availH = height - 160;
-                    TILE_SIZE = Math.min(Math.floor(availW / COLS), Math.floor(availH / TOTAL_ROWS), 45);
-                    this.offsetX = (width - BOARD_W) / 2 + 10;
-                } else {
-                    TILE_SIZE = 45;
-                    this.offsetX = (width - BOARD_W) / 2; 
-                }
-
-                BOARD_W = COLS * TILE_SIZE; BOARD_H = TOTAL_ROWS * TILE_SIZE;
-                this.offsetY = (height - BOARD_H) / 2;
-            }
-
-            startPlacement(myRole) {
-                this.phase = 'placement';
-                this.entities = [new Entity(0, 3.5, 'red', 'main'), new Entity(9, 3.5, 'blue', 'main')];
-                this.projectiles = []; 
-                canvas.classList.remove('zoom-battle');
-                sfx.stopLobbyMusic(); // Stop music for Arena
-            }
-
-            prepareBattle(redBoard, blueBoard) {
-                this.phase = 'reveal';
-                this.entities = [new Entity(0, 3.5, 'red', 'main'), new Entity(9, 3.5, 'blue', 'main')];
-                this.projectiles = [];
-
-                const parseBoard = (boardObj, team, rowOffset) => {
-                    if(!boardObj) return;
-                    for(let i=0; i<40; i++) {
-                        let item = boardObj[i];
-                        if (item) {
-                            let r = Math.floor(i / COLS) + rowOffset;
-                            let c = i % COLS;
-                            if (!((team === 'red' && r===0 && (c===3||c===4)) || (team==='blue' && r===9 && (c===3||c===4)))) {
-                                this.entities.push(new Entity(r, c, team, item));
-                            }
-                        }
-                    }
-                };
-
-                parseBoard(redBoard, 'red', 0);
-                parseBoard(blueBoard, 'blue', 5);
-
-                this.maxBlueHp = this.entities.filter(e => e.team === gameApp.myRole).reduce((sum, e) => sum + e.maxHp, 0);
-                this.maxRedHp = this.entities.filter(e => e.team !== gameApp.myRole).reduce((sum, e) => sum + e.maxHp, 0);
-            }
-
-            spawnParticles(x, y, color, count, size=3, type='normal') {
-                for(let i=0; i<count; i++) this.particles.push(new Particle(x, y, color, 3.5, size, type));
-            }
-
-            handleClick(e) {
-                if (this.phase !== 'placement' || !gameApp.selectedItem) return;
-
-                let rect = canvas.getBoundingClientRect();
-                let mouseX = e.clientX - rect.left - this.offsetX;
-                let mouseY = e.clientY - rect.top - this.offsetY;
-
-                let visual_r = Math.floor(mouseY / TILE_SIZE); let visual_c = Math.floor(mouseX / TILE_SIZE);
-                let r = this.flipY ? (TOTAL_ROWS - 1 - visual_r) : visual_r;
-                let c = visual_c;
-
-                if (c < 0 || c >= COLS || r < 0 || r >= TOTAL_ROWS) return;
-
-                let myRowStart = gameApp.myRole === 'blue' ? 5 : 0;
-                let myRowEnd = gameApp.myRole === 'blue' ? 9 : 4;
-
-                if (r >= myRowStart && r <= myRowEnd) {
-                    let localR = r - myRowStart;
-                    let gridIndex = (localR * COLS) + c;
-                    if (localR === (gameApp.myRole === 'blue'?4:0) && (c===3||c===4)) return;
-                    gameApp.placeItem(gridIndex, r, c);
-                }
-            }
-
-            triggerGameEnd(winnerTeam, reason) {
-                if (this.phase === 'end') return;
-                this.phase = 'end';
-                update(ref(db, `matches/${gameApp.matchId}`), {
-                    status: 'finished', winnerRole: winnerTeam, endReason: reason
-                });
-            }
-
-            triggerGameEndLocal(winnerTeam, reason) {
-                if (this.phase === 'end_visual') return;
-                this.phase = 'end_visual';
-                setTimeout(() => gameApp.endGame(winnerTeam, reason), 2200);
-            }
-
-            loop() {
-                if (this.phase === 'lobby') {
-                    ctx.clearRect(0, 0, width, height);
-                    requestAnimationFrame(() => this.loop());
-                    return;
-                }
-
-                ctx.fillStyle = '#020b14'; ctx.fillRect(0, 0, width, height);
-
                 ctx.lineWidth = 1.2;
-                for (let r = 0; r < TOTAL_ROWS; r++) {
-                    for (let c = 0; c < COLS; c++) {
-                        let x = c * TILE_SIZE + this.offsetX; let y = r * TILE_SIZE + this.offsetY;
-                        const renderAsEnemyZone = this.flipY ? (r > 4) : (r < 5);
-                        if (renderAsEnemyZone) { 
-                            ctx.fillStyle = 'rgba(255, 0, 68, 0.07)'; ctx.strokeStyle = 'rgba(255, 0, 68, 0.22)'; 
-                        } else { 
-                            ctx.fillStyle = 'rgba(0, 229, 255, 0.07)'; ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)'; 
-                        }
-                        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE); ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
-                    }
-                }
-
-                let sortedEntities = [...this.entities].sort((a, b) => {
-                    const ya = this.flipY ? (BOARD_H - a.y) : a.y;
-                    const yb = this.flipY ? (BOARD_H - b.y) : b.y;
-                    return ya - yb;
-                });
-                
-                sortedEntities.forEach(e => {
-                    e.update(this);
-                    const origY = e.y; const origTeam = e.team;
-                    if (this.flipY) { e.y = BOARD_H - origY; }
-                    e.draw(ctx, this.offsetX, this.offsetY);
-                    if (this.flipY) { e.y = origY; }
-                });
-
-                for (let i = this.projectiles.length - 1; i >= 0; i--) {
-                    const p = this.projectiles[i]; p.update(this); p.draw(ctx, this.offsetX, this.offsetY);
-                    if (p.life <= 0) this.projectiles.splice(i, 1);
-                }
-
-                if (this.phase === 'reveal' || this.phase === 'battle') {
-                    let currentBlueHp = this.entities.filter(e => e.team === gameApp.myRole && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
-                    let currentRedHp = this.entities.filter(e => e.team !== gameApp.myRole && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
-
-                    let bluePercentage = this.maxBlueHp > 0 ? (currentBlueHp / this.maxBlueHp) * 100 : 0;
-                    let redPercentage = this.maxRedHp > 0 ? (currentRedHp / this.maxRedHp) * 100 : 0;
-
-                    const blueBar = document.getElementById('blue-strength-bar');
-                    const redBar = document.getElementById('red-strength-bar');
-                    if (blueBar) blueBar.style.width = `${Math.max(0, bluePercentage)}%`;
-                    if (redBar) redBar.style.width = `${Math.max(0, redPercentage)}%`;
-                }
-                
-                this.particles.forEach((p, i) => {
-                    p.update(); const origPY = p.y;
-                    if (this.flipY) p.y = BOARD_H - origPY;
-                    p.draw(ctx, this.offsetX, this.offsetY);
-                    if (this.flipY) p.y = origPY;
-                    if(p.life <= 0) this.particles.splice(i, 1);
-                });
-
-                this.floatingTexts.forEach((t, i) => {
-                    t.update(); const origTY = t.y;
-                    if (this.flipY) t.y = BOARD_H - origTY;
-                    t.draw(ctx, this.offsetX, this.offsetY);
-                    if (this.flipY) t.y = origTY;
-                    if(t.life <= 0) this.floatingTexts.splice(i, 1);
-                });
-
-                requestAnimationFrame(() => this.loop());
+                ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE); ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
             }
         }
 
-        const engine = new GameEngine();
+        // Draw Divider
+        const midY = 5 * TILE_SIZE + this.offsetY;
+        ctx.strokeStyle = 'rgba(255, 220, 80, 0.38)'; ctx.lineWidth = 1.8;
+        ctx.setLineDash([7, 4]); ctx.beginPath(); ctx.moveTo(this.offsetX, midY); ctx.lineTo(this.offsetX + BOARD_W, midY); ctx.stroke(); ctx.setLineDash([]);
+        
+        // Zone Text
+        ctx.globalAlpha = 0.11; ctx.font = `bold ${TILE_SIZE * 0.62}px 'Fredoka One'`; ctx.textAlign = 'center';
+        ctx.fillStyle = this.flipY ? '#4488ff' : '#ff6060'; ctx.fillText('ENEMY', this.offsetX + BOARD_W / 2, this.offsetY + TILE_SIZE * 2.5);
+        ctx.fillStyle = this.flipY ? '#ff6060' : '#4488ff'; ctx.fillText('YOUR ZONE', this.offsetX + BOARD_W / 2, this.offsetY + TILE_SIZE * 7.5); ctx.globalAlpha = 1;
 
-        // ==========================================================================
-        // APPLICATION & SYNC LOGIC
-        // ==========================================================================
-        const gameApp = {
-            user: null, userData: { gold: 1500, grids: 40, streak: 0, username: "" },
-            matchId: null, myRole: null,
-            selectedItem: null, selectedCost: 0,
-            myBoard: Array(40).fill(null), opponentBoard: Array(40).fill(null),
-            timerInterval: null, queueRef: null, queueDisconnectRef: null, matchDisconnectRef: null,
-
-            async showLoader(text, duration = 0) {
-                document.getElementById('loading-text').innerText = text;
-                const l = document.getElementById('global-loader'); l.classList.add('active');
-                if (duration > 0) { await new Promise(r => setTimeout(r, duration)); l.classList.remove('active'); }
-            },
-            hideLoader() { document.getElementById('global-loader').classList.remove('active'); },
-            switchScreen(id) { 
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-                document.getElementById(id).classList.add('active'); engine.resize();
-                
-                // Music Triggering per screen
-                if (id === 'screen-lobby') sfx.playLobbyMusic();
-                else sfx.stopLobbyMusic();
-            },
-            toggleAuth(view) {
-                if (view === 'signup') {
-                    document.getElementById('panel-login').style.display = 'none'; document.getElementById('panel-signup').style.display = 'block';
-                } else {
-                    document.getElementById('panel-signup').style.display = 'none'; document.getElementById('panel-login').style.display = 'block';
-                }
-            },
-
-            async login() {
-                const e = document.getElementById('auth-email-login').value; const p = document.getElementById('auth-pass-login').value;
-                if(!e || !p) return alert("Credentials required to Sign In!");
-                this.showLoader("ENCRYPTING CONNECTION...");
-                try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { alert("Login Failed"); this.hideLoader(); }
-            },
-
-            async register() {
-                const e = document.getElementById('auth-email-signup').value; const p = document.getElementById('auth-pass-signup').value;
-                if(!e || !p) return alert("Email/Password required!");
-                this.showLoader("REGISTERING...");
-                try { await createUserWithEmailAndPassword(auth, e, p); } catch (err) { alert("Sign Up Failed"); this.hideLoader(); }
-            },
-
-            async logout() {
-                this.showLoader("DISCONNECTING...");
-                try {
-                    await signOut(auth); this.user = null;
-                    document.getElementById('auth-email-login').value = ''; document.getElementById('auth-pass-login').value = '';
-                    this.toggleAuth('login'); this.switchScreen('screen-auth'); this.hideLoader();
-                } catch (err) { alert("Logout Failed"); this.hideLoader(); }
-            },
-
-            initUser(user) {
-                this.user = user;
-                const userRef = ref(db, `users/${user.uid}`);
-                onValue(userRef, (snap) => {
-                    if (snap.exists()) {
-                        this.userData = snap.val(); 
-                        document.getElementById('modal-name-input').value = this.userData.username || "";
-                    } else set(userRef, this.userData);
-                    this.updateLobbyUI();
-                    if (engine.phase === 'lobby' || engine.phase === 'end_visual') { this.hideLoader(); this.switchScreen('screen-lobby'); engine.phase = 'lobby'; }
-                });
-            },
-
-            toggleProfileModal() {
-                const modal = document.getElementById('modal-profile');
-                modal.classList.toggle('active');
-                if (modal.classList.contains('active')) {
-                    document.getElementById('modal-name-input').value = this.userData.username || "";
-                }
-            },
-
-            saveName() {
-                const nameInput = document.getElementById('modal-name-input').value.trim() || "Commander";
-                this.userData.username = nameInput;
-                update(ref(db, `users/${this.user.uid}`), { username: nameInput });
-                this.updateLobbyUI();
-                this.toggleProfileModal();
-            },
-
-            updateLobbyUI() {
-                document.getElementById('lobby-gold').innerText = this.userData.gold;
-                document.getElementById('lobby-grids').innerText = this.userData.grids;
-                document.getElementById('lobby-streak').innerText = this.userData.streak || 0;
-                document.getElementById('lobby-profile-name').innerText = this.userData.username || "Commander";
-            },
-
-            // LEADERBOARD LOGIC
-            toggleLeaderboard() {
-                const modal = document.getElementById('modal-leaderboard');
-                modal.classList.toggle('active');
-                if (modal.classList.contains('active')) { this.loadRankings('streak'); }
-            },
-
-            loadRankings(category) {
-                // Update tabs
-                document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
-                document.getElementById(`tab-${category}`).classList.add('active');
-                
-                const listEl = document.getElementById('leaderboard-list');
-                listEl.innerHTML = '<div class="spinner" style="margin: 30px auto; border-top-color: var(--gold);"></div><p style="color:var(--gold);">Fetching Intels...</p>';
-
-                get(ref(db, 'users')).then((snap) => {
-                    if (!snap.exists()) { listEl.innerHTML = "<p>No commanders found.</p>"; return; }
-                    let users = [];
-                    snap.forEach(childSnap => {
-                        users.push({ uid: childSnap.key, ...childSnap.val() });
-                    });
-                    
-                    // Sort descending
-                    users.sort((a, b) => {
-                        let valA = a[category] || 0; let valB = b[category] || 0;
-                        return valB - valA;
-                    });
-                    
-                    // Top 100
-                    users = users.slice(0, 100);
-                    
-                    listEl.innerHTML = '';
-                    users.forEach((u, index) => {
-                        const isMe = u.uid === this.user.uid;
-                        const rankClass = index === 0 ? 'rank-1' : '';
-                        const meClass = isMe ? 'my-rank' : '';
-                        
-                        let displayScore = u[category] || 0;
-                        if(category === 'gold') displayScore += ' 💰';
-                        if(category === 'grids') displayScore += ' 🏰';
-                        if(category === 'streak') displayScore += ' ⚔️';
-
-                        const div = document.createElement('div');
-                        div.className = `rank-item ${rankClass} ${meClass}`;
-                        div.innerHTML = `
-                            <div class="rank-number">#${index + 1}</div>
-                            <div class="rank-name">${u.username || 'Commander'} ${isMe ? '(YOU)' : ''}</div>
-                            <div class="rank-score">${displayScore}</div>
-                        `;
-                        listEl.appendChild(div);
-                    });
-                }).catch(() => {
-                    listEl.innerHTML = "<p>Signal lost. Could not load rankings.</p>";
-                });
-            },
-
-            async findMatch() {
-                document.getElementById('match-status-container').style.display = 'block';
-                document.getElementById('btn-matchmake').disabled = true; document.getElementById('btn-matchmake').style.opacity = '0.5';
-                document.getElementById('btn-cancel-match').style.display = 'inline-block';
-
-                this.queueRef = ref(db, 'queue');
-                const snap = await get(this.queueRef);
-                const myName = this.userData.username || "Commander";
-
-                if (snap.exists() && snap.val().uid !== this.user.uid) {
-                    const hostUid = snap.val().uid;
-                    this.matchId = hostUid + "_" + this.user.uid;
-                    this.myRole = 'red'; 
-                    await set(ref(db, `matches/${this.matchId}`), {
-                        blue: hostUid, red: this.user.uid,
-                        redName: myName,
-                        status: 'placement', startTime: Date.now(),
-                        blueReady: false, redReady: false,
-                        blueBoard: Array(40).fill(null), redBoard: Array(40).fill(null)
-                    });
-                    await remove(this.queueRef); this.setupGame();
-                } else {
-                    this.myRole = 'blue';
-                    await set(this.queueRef, { uid: this.user.uid, time: Date.now() });
-                    this.queueDisconnectRef = onDisconnect(this.queueRef); this.queueDisconnectRef.remove();
-                    
-                    const matchQuery = ref(db, 'matches');
-                    onValue(matchQuery, (mSnap) => {
-                        mSnap.forEach(child => {
-                            if (child.val().blue === this.user.uid && child.val().status === 'placement' && !this.matchId) {
-                                this.matchId = child.key;
-                                if(this.queueDisconnectRef) this.queueDisconnectRef.cancel();
-                                remove(this.queueRef);
-                                update(ref(db, `matches/${this.matchId}`), { blueName: myName });
-                                this.setupGame();
-                            }
-                        });
-                    });
-                }
-            },
-
-            async cancelMatch() {
-                if (this.queueRef) { if(this.queueDisconnectRef) this.queueDisconnectRef.cancel(); await remove(this.queueRef); this.queueRef = null; }
-                document.getElementById('match-status-container').style.display = 'none';
-                document.getElementById('btn-matchmake').disabled = false; document.getElementById('btn-matchmake').style.opacity = '1';
-                document.getElementById('btn-cancel-match').style.display = 'none';
-            },
-
-            syncOpponentEntities() {
-                const enemyRole = this.myRole === 'blue' ? 'red' : 'blue';
-                const rowOffset = enemyRole === 'red' ? 0 : 5;
-                engine.entities = engine.entities.filter(e => !(e.team === enemyRole && e.type !== 'main'));
-                for(let i = 0; i < 40; i++) {
-                    let item = this.opponentBoard[i];
-                    if (item) {
-                        let localR = Math.floor(i / COLS); let c = i % COLS; let r = localR + rowOffset;
-                        if (!((enemyRole === 'red' && localR === 0 && (c===3||c===4)) || (enemyRole === 'blue' && localR === 4 && (c===3||c===4)))) {
-                            engine.entities.push(new Entity(r, c, enemyRole, item));
-                        }
-                    }
-                }
-            },
-
-            setupGame() {
-                this.hideLoader(); this.switchScreen('game-ui'); 
-                document.getElementById('game-ui').style.display = 'block';
-                document.getElementById('game-gold').innerText = this.userData.gold;
-                document.getElementById('shop-container').style.display = 'flex';
-                document.getElementById('ready-btn-container').style.display = 'block';
-                document.getElementById('strength-hud').style.display = 'none';
-                document.getElementById('btn-ready').innerText = "READY";
-                document.getElementById('btn-ready').disabled = false;
-                
-                this.myBoard = Array(40).fill(null); this.opponentBoard = Array(40).fill(null);
-                
-                engine.startPlacement(this.myRole);
-                engine.flipY = (this.myRole === 'red');
-                engine.resize();
-                
-                const matchRef = ref(db, `matches/${this.matchId}`);
-                this.matchDisconnectRef = onDisconnect(matchRef);
-                this.matchDisconnectRef.update({ status: 'abandoned', leaver: this.myRole });
-
-                onValue(matchRef, async (snap) => {
-                    const data = snap.val(); if (!data) return;
-
-                    const enemyRole = this.myRole === 'blue' ? 'red' : 'blue';
-                    const myName = data[`${this.myRole}Name`] || "YOU";
-                    const enemyName = data[`${enemyRole}Name`] || "OPPONENT";
-                    
-                    document.getElementById('vs-my-name').innerText = myName.toUpperCase();
-                    document.getElementById('vs-enemy-name').innerText = enemyName.toUpperCase();
-                    document.getElementById('blue-str-label').innerText = myName.toUpperCase() + "\n(BLUE)";
-                    document.getElementById('red-str-label').innerText = enemyName.toUpperCase() + "\n(RED)";
-
-                    if (data.status === 'abandoned') {
-                        if (data.leaver !== this.myRole && engine.phase !== 'end' && engine.phase !== 'end_visual') {
-                            engine.triggerGameEnd(this.myRole, "OPPONENT FLED THE BATTLE");
-                        }
-                        return;
-                    }
-
-                    if (data.status === 'finished' && engine.phase !== 'end_visual') {
-                        engine.triggerGameEndLocal(data.winnerRole, data.endReason);
-                    }
-
-                    if (data[`${enemyRole}Board`]) {
-                        this.opponentBoard = [...data[`${enemyRole}Board`]];
-                        if (engine.phase === 'placement') this.syncOpponentEntities();
-                    }
-
-                    if (data[`${enemyRole}Ready`]) document.getElementById('enemy-state').innerText = "Status: READY FOR WAR!";
-
-                    if (data.status === 'placement' && data.blueReady && data.redReady) {
-                        if (this.myRole === 'red') await update(matchRef, { status: 'battle' });
-                    }
-
-                    if (data.status === 'battle' && engine.phase === 'placement') {
-                        this.triggerBattle(data.redBoard, data.blueBoard);
-                    }
-                });
-
-                let startTime = Date.now();
-                this.timerInterval = setInterval(() => {
-                    if (engine.phase === 'placement') {
-                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                        let timeLeft = Math.max(0, 120 - elapsed);
-                        document.getElementById('match-timer').innerText = timeLeft;
-                        if (timeLeft <= 0) { clearInterval(this.timerInterval); this.declareReady(); }
-                    }
-                }, 250);
-            },
-
-            selectShopItem(type, cost) {
-                document.querySelectorAll('.shop-item').forEach(el => el.classList.remove('selected'));
-                document.getElementById(`shop-${type}`).classList.add('selected');
-                this.selectedItem = type; this.selectedCost = cost;
-                const preview = document.getElementById('unit-preview'); preview.style.display = 'flex';
-                preview.innerHTML = `<div style="color:var(--blue-glow);font-size:2rem;">${type==='soldier'?'⚔️':type==='barrier'?'🧱':type==='defense'?'🔫':'🏹'}</div><div>Placing ${type}</div>`;
-                setTimeout(() => { preview.style.display = 'none'; }, 1800);
-            },
-
-            async placeItem(index, r, c) {
-                if (this.userData.gold < this.selectedCost) {
-                    engine.floatingTexts.push(new FloatingText((c*TILE_SIZE)+engine.offsetX, (r*TILE_SIZE)+engine.offsetY, "Not enough Gold!", "#ff0044"));
-                    return;
-                }
-                this.userData.gold -= this.selectedCost;
-                document.getElementById('game-gold').innerText = this.userData.gold;
-                this.myBoard[index] = this.selectedItem;
-                
-                engine.entities = engine.entities.filter(e => !(e.team === this.myRole && Math.floor((e.y-engine.offsetY)/TILE_SIZE) === r && Math.floor((e.x-engine.offsetX)/TILE_SIZE) === c && e.type !== 'main'));
-                engine.entities.push(new Entity(r, c, this.myRole, this.selectedItem));
-                
-                await update(ref(db, `matches/${this.matchId}`), { [`${this.myRole}Board`]: this.myBoard });
-                await update(ref(db, `users/${this.user.uid}`), { gold: this.userData.gold });
-            },
-
-            async declareReady() {
-                clearInterval(this.timerInterval);
-                document.getElementById('btn-ready').innerText = "WAITING...";
-                document.getElementById('btn-ready').disabled = true;
-                this.showLoader("SYNCING TROOP FORMATIONS...", 1200);
-                await update(ref(db, `matches/${this.matchId}`), { [`${this.myRole}Ready`]: true });
-            },
-
-            triggerBattle(redBoard, blueBoard) {
-                document.getElementById('shop-container').style.display = 'none';
-                document.getElementById('ready-btn-container').style.display = 'none';
-                document.getElementById('phase-text').innerText = "SCOUTING ENEMY";
-                document.getElementById('phase-text').style.color = "var(--blue-glow)";
-                
-                engine.prepareBattle(redBoard, blueBoard);
-                canvas.classList.add('zoom-battle');
-                
-                let countdown = 5; document.getElementById('match-timer').innerText = countdown;
-                const revealInterval = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) { document.getElementById('match-timer').innerText = countdown; } 
-                    else {
-                        clearInterval(revealInterval);
-                        document.getElementById('phase-text').innerText = "LIVE COMBAT";
-                        document.getElementById('phase-text').style.color = "var(--red-glow)";
-                        document.getElementById('match-timer').innerText = "⚔️";
-                        document.getElementById('strength-hud').style.display = 'flex';
-                        engine.phase = 'battle';
-                        setTimeout(() => { if(engine.phase === 'battle') engine.triggerGameEnd('draw', "TIME EXPIRED"); }, 120000);
-                    }
-                }, 1000);
-            },
-
-            async endGame(winnerRole, reason) {
-                engine.phase = 'end_visual';
-                let isWin = winnerRole === this.myRole;
-                if (this.matchDisconnectRef) this.matchDisconnectRef.cancel();
-
-                const getBoardSpent = (board) => board ? board.reduce((sum, item) => sum + ({soldier:10, barrier:15, defense:30, arrow:50}[item] || 0), 0) : 0;
-                let totalPot = 0; 
-
-                const titleEl = document.getElementById('result-title');
-                const reasonEl = document.getElementById('result-reason');
-                const goldEl = document.getElementById('result-gold');
-                const gridEl = document.getElementById('result-grid');
-                const survivedEl = document.getElementById('result-survived');
-                
-                titleEl.className = 'result-title'; goldEl.className = 'stat-change'; gridEl.className = 'stat-change'; reasonEl.innerText = reason;
-                const survivedCount = engine.entities.filter(e => !e.isDead && e.type !== 'main').length;
-
-                if (winnerRole === 'draw') {
-                    titleEl.innerText = "STALEMATE"; titleEl.classList.add('draw-text');
-                    goldEl.innerText = "+0"; gridEl.innerText = "+0"; survivedEl.innerText = survivedCount;
-                } else if (isWin) {
-                    titleEl.innerText = "VICTORY"; titleEl.classList.add('victory-text');
-                    goldEl.innerText = `+200`; goldEl.classList.add('pos');
-                    gridEl.innerText = "+5"; gridEl.classList.add('pos');
-                    survivedEl.innerText = survivedCount; survivedEl.classList.add('pos');
-                    this.userData.gold += 200; this.userData.grids += 5; this.userData.streak = (this.userData.streak || 0) + 1;
-                } else {
-                    titleEl.innerText = "DEFEAT"; titleEl.classList.add('defeat-text');
-                    goldEl.innerText = "+0"; goldEl.classList.add('neg'); gridEl.innerText = "-0";
-                    survivedEl.innerText = survivedCount; survivedEl.classList.add('neg'); this.userData.streak = 0;
-                }
-
-                await update(ref(db, `users/${this.user.uid}`), this.userData);
-                if(this.myRole === 'blue') await remove(ref(db, `matches/${this.matchId}`));
-
-                document.getElementById('result-popup').classList.add('active');
-            },
-
-            returnToLobby() {
-                document.getElementById('result-popup').classList.remove('active');
-                document.getElementById('game-ui').style.display = 'none';
-                document.getElementById('strength-hud').style.display = 'none';
-                document.getElementById('match-status-container').style.display = 'none';
-                document.getElementById('phase-text').innerText = "PLACEMENT PHASE";
-                document.getElementById('phase-text').style.color = "#aaa";
-                document.getElementById('enemy-state').innerText = "Status: Arranging...";
-                let btn = document.getElementById('btn-matchmake'); btn.disabled = false; btn.style.opacity = '1';
-                
-                this.matchId = null; this.myRole = null; canvas.classList.remove('zoom-battle');
-                engine.phase = 'lobby';
-                this.switchScreen('screen-lobby');
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) gameApp.initUser(user); else gameApp.switchScreen('screen-auth');
+        let sortedEntities = [...this.entities].sort((a, b) => {
+            const ya = this.flipY ? (BOARD_H - a.y) : a.y;
+            const yb = this.flipY ? (BOARD_H - b.y) : b.y;
+            return ya - yb;
+        });
+        
+        sortedEntities.forEach(e => {
+            e.update(this);
+            const origY = e.y;
+            if (this.flipY) { e.y = BOARD_H - origY; }
+            e.draw(ctx, this.offsetX, this.offsetY);
+            if (this.flipY) { e.y = origY; }
         });
 
-        window.gameApp = gameApp;
-    </script>
-</body>
-</html>
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const p = this.projectiles[i]; p.update(this); 
+            
+            const origPY = p.y;
+            if (this.flipY) p.y = BOARD_H - origPY;
+            p.draw(ctx, this.offsetX, this.offsetY);
+            if (this.flipY) p.y = origPY;
 
+            if (p.life <= 0) this.projectiles.splice(i, 1);
+        }
+
+        if (this.phase === 'reveal' || this.phase === 'battle') {
+            let currentMeHp = this.entities.filter(e => e.team === gameApp.myRole && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
+            let currentOppHp = this.entities.filter(e => e.team !== gameApp.myRole && !e.isDead).reduce((sum, e) => sum + e.hp, 0);
+
+            let myPercentage = this.maxMeHp > 0 ? (currentMeHp / this.maxMeHp) * 100 : 0;
+            let oppPercentage = this.maxOppHp > 0 ? (currentOppHp / this.maxOppHp) * 100 : 0;
+
+            const bE = document.getElementById('b-str');
+            const rE = document.getElementById('r-str');
+            if (bE) bE.style.height = `${Math.max(0, myPercentage)}%`;
+            if (rE) rE.style.height = `${Math.max(0, oppPercentage)}%`;
+        }
+        
+        this.particles.forEach((p, i) => {
+            p.update(); const origPY = p.y;
+            if (this.flipY) p.y = BOARD_H - origPY;
+            p.draw(ctx, this.offsetX, this.offsetY);
+            if (this.flipY) p.y = origPY;
+            if(p.life <= 0) this.particles.splice(i, 1);
+        });
+
+        this.floatingTexts.forEach((t, i) => {
+            t.update(); const origTY = t.y;
+            if (this.flipY) t.y = BOARD_H - origTY;
+            t.draw(ctx, this.offsetX, this.offsetY);
+            if (this.flipY) t.y = origTY;
+            if(t.life <= 0) this.floatingTexts.splice(i, 1);
+        });
+
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+const engine = new GameEngine();
+
+// ==========================================================================
+// APPLICATION & SYNC LOGIC
+// ==========================================================================
+const gameApp = {
+    user: null, userData: { gold: 5000, grids: 50, streak: 0, username: "" },
+    matchId: null, myRole: null,
+    selectedUnit: null, selectedCost: 0,
+    myBoard: Array(40).fill(null), oppBoard: Array(40).fill(null),
+    timerInterval: null, queueRef: null, queueDisconnectRef: null, matchDisconnectRef: null,
+    
+    getSpent(board) {
+        const c = {soldier: 10, barrier: 15, defense: 30, arrow: 50};
+        return (board || []).reduce((sum, i) => sum + (c[i] || 0), 0);
+    },
+
+    switchScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById('screen-game').classList.toggle('active', id === 'screen-game');
+        if (id !== 'screen-game') document.getElementById(id).classList.add('active'); 
+        engine.resize();
+        
+        if (id === 'screen-lobby') sfx.playLobbyMusic();
+        else sfx.stopLobbyMusic();
+    },
+
+    updateLobbyUI() {
+        document.getElementById('lb-gold').textContent = this.userData.gold;
+        document.getElementById('lb-grids').textContent = this.userData.grids;
+        document.getElementById('lb-streak').textContent = this.userData.streak || 0;
+        document.getElementById('lb-name').textContent = this.userData.username || "Commander";
+    },
+
+    async auth() {
+        const email = document.getElementById('auth-email').value.trim(); 
+        const pass = document.getElementById('auth-pass').value;
+        const err = document.getElementById('auth-err');
+        err.classList.remove('show');
+        
+        if(!email || !pass) {
+            err.textContent = '📝 Please fill in both fields!';
+            err.classList.add('show');
+            return;
+        }
+
+        const btn = document.getElementById('btn-auth');
+        btn.disabled = true;
+        document.getElementById('auth-tx').textContent = 'Connecting...';
+        
+        try {
+            const isSignUp = document.getElementById('tab-up').classList.contains('active');
+            if (isSignUp) {
+                await createUserWithEmailAndPassword(auth, email, pass);
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass);
+            }
+        } catch(e) {
+            err.textContent = '❌ Invalid Credentials or Error!';
+            err.classList.add('show');
+            btn.disabled = false;
+            const isSignUp = document.getElementById('tab-up').classList.contains('active');
+            document.getElementById('auth-tx').textContent = isSignUp ? 'JOIN THE BATTLE!' : 'ENTER ICE KINGDOM';
+        }
+    },
+
+    initUser(user) {
+        this.user = user;
+        const userRef = ref(db, `users/${user.uid}`);
+        onValue(userRef, (snap) => {
+            if (snap.exists()) {
+                this.userData = { ...this.userData, ...snap.val() }; 
+                document.getElementById('name-in').value = this.userData.username || "";
+            } else {
+                const randomNum = Math.floor(1000 + Math.random() * 9000);
+                this.userData = {
+                    gold: 5000,
+                    grids: 50,
+                    streak: 0,
+                    username: "commander" + randomNum
+                };
+                set(userRef, this.userData);
+                document.getElementById('name-in').value = this.userData.username;
+            }
+            
+            this.updateLobbyUI();
+            if (engine.phase === 'lobby' || engine.phase === 'end_v') { 
+                document.getElementById('loader').classList.add('hide'); 
+                this.switchScreen('screen-lobby'); 
+                engine.phase = 'lobby'; 
+            }
+        });
+    },
+
+    async logout() {
+        try {
+            await signOut(auth); this.user = null;
+            document.getElementById('auth-email').value = ''; document.getElementById('auth-pass').value = '';
+            this.switchScreen('screen-auth'); engine.phase = 'lobby';
+            document.getElementById('btn-auth').disabled = false;
+            document.getElementById('auth-tx').textContent = 'ENTER ICE KINGDOM';
+        } catch (err) { toast("❌ Logout Failed"); }
+    },
+
+    openProfile() {
+        document.getElementById('name-in').value = this.userData.username || "";
+        document.getElementById('modal-profile').classList.add('show');
+    },
+    
+    closeProfile() {
+        document.getElementById('modal-profile').classList.remove('show');
+    },
+
+    saveName() {
+        const nameInput = document.getElementById('name-in').value.trim() || "Commander";
+        this.userData.username = nameInput;
+        update(ref(db, `users/${this.user.uid}`), { username: nameInput });
+        this.updateLobbyUI();
+        this.closeProfile();
+        toast('✅ Name saved: ' + nameInput); sfx.pop();
+    },
+
+    // LEADERBOARD LOGIC
+    openLb() {
+        document.getElementById('modal-lb').classList.add('show');
+        this.loadRank('streak');
+    },
+    closeLb() {
+        document.getElementById('modal-lb').classList.remove('show');
+    },
+
+    loadRank(category) {
+        document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`rt-${category}`).classList.add('active');
+        
+        const listEl = document.getElementById('rank-list');
+        listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#6080a0;font-weight:700;">❄️ Loading champions...</div>';
+
+        get(ref(db, 'users')).then((snap) => {
+            if (!snap.exists()) { listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#6080a0;">No data found 😢</div>'; return; }
+            let users = [];
+            snap.forEach(childSnap => {
+                users.push({ uid: childSnap.key, ...childSnap.val() });
+            });
+            
+            users.sort((a, b) => {
+                let valA = a[category] || 0; let valB = b[category] || 0;
+                return valB - valA;
+            });
+            
+            users = users.slice(0, 100);
+            
+            listEl.innerHTML = '';
+            users.forEach((u, index) => {
+                const isMe = u.uid === this.user.uid;
+                const rankClass = index === 0 ? ' rk1' : '';
+                const meClass = isMe ? ' isme' : '';
+                
+                const ic = { streak: '⚔️', grids: '🏰', gold: '💰' };
+                let valStr = `${ic[category]} ${u[category] || 0}`;
+
+                const div = document.createElement('div');
+                div.className = `rk-item${rankClass}${meClass}`;
+                
+                let iconRank = `#${index + 1}`;
+                if(index === 0) iconRank = '🥇'; else if(index===1) iconRank = '🥈'; else if(index===2) iconRank = '🥉';
+
+                div.innerHTML = `
+                    <div class="rk-num">${iconRank}</div>
+                    <div class="rk-name">${u.username || 'Commander'} ${isMe ? '👈(YOU)' : ''}</div>
+                    <div class="rk-val">${valStr}</div>
+                `;
+                listEl.appendChild(div);
+            });
+        }).catch(() => {
+            listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;">❌ Could not load!</div>';
+        });
+    },
+
+    async findMatch() {
+        if(document.getElementById('card-prac').classList.contains('active')) {
+            toast('⚠️ Training coming soon! Try Live Battle!');
+            return;
+        }
+
+        document.getElementById('mm-box').classList.add('show');
+        const btn = document.getElementById('btn-mm'); btn.disabled = true;
+        
+        this.queueRef = ref(db, 'queue');
+        const snap = await get(this.queueRef);
+        const myName = this.userData.username || "Commander";
+
+        if (snap.exists() && snap.val().uid !== this.user.uid) {
+            const hostUid = snap.val().uid;
+            this.matchId = hostUid + "_" + this.user.uid;
+            this.myRole = 'red'; 
+            await set(ref(db, `matches/${this.matchId}`), {
+                blue: hostUid, red: this.user.uid,
+                redName: myName,
+                status: 'placement', startTime: Date.now(),
+                blueReady: false, redReady: false,
+                blueBoard: Array(40).fill(null), redBoard: Array(40).fill(null)
+            });
+            await remove(this.queueRef); this.setupGame();
+        } else {
+            this.myRole = 'blue';
+            await set(this.queueRef, { uid: this.user.uid, time: Date.now() });
+            this.queueDisconnectRef = onDisconnect(this.queueRef); this.queueDisconnectRef.remove();
+            
+            document.getElementById('mm-sub').textContent = 'Waiting for another player...';
+            
+            const matchQuery = ref(db, 'matches');
+            onValue(matchQuery, (mSnap) => {
+                mSnap.forEach(child => {
+                    if (child.val().blue === this.user.uid && child.val().status === 'placement' && !this.matchId) {
+                        this.matchId = child.key;
+                        if(this.queueDisconnectRef) this.queueDisconnectRef.cancel();
+                        remove(this.queueRef);
+                        update(ref(db, `matches/${this.matchId}`), { blueName: myName });
+                        this.setupGame();
+                    }
+                });
+            });
+        }
+    },
+
+    async cancelMatch() {
+        if (this.queueRef) { if(this.queueDisconnectRef) this.queueDisconnectRef.cancel(); await remove(this.queueRef); this.queueRef = null; }
+        document.getElementById('mm-box').classList.remove('show');
+        document.getElementById('btn-mm').disabled = false;
+    },
+
+    syncOpponentEntities() {
+        const enemyRole = this.myRole === 'blue' ? 'red' : 'blue';
+        const rowOffset = enemyRole === 'red' ? 0 : 5;
+        engine.entities = engine.entities.filter(e => !(e.team === enemyRole && e.type !== 'main'));
+        for(let i = 0; i < 40; i++) {
+            let item = this.oppBoard[i];
+            if (item) {
+                let localR = Math.floor(i / COLS); let c = i % COLS; let r = localR + rowOffset;
+                if (!((enemyRole === 'red' && localR === 0 && (c===3||c===4)) || (enemyRole === 'blue' && localR === 4 && (c===3||c===4)))) {
+                    engine.entities.push(new Entity(r, c, enemyRole, item));
+                }
+            }
+        }
+    },
+
+    setupGame() {
+        document.getElementById('mm-box').classList.remove('show');
+        document.getElementById('btn-mm').disabled = false;
+        
+        this.switchScreen('screen-game'); 
+        document.getElementById('gc-gold').textContent = this.userData.gold;
+        document.getElementById('shop-bar').style.display = 'flex';
+        document.getElementById('str-hud').classList.remove('show');
+        document.getElementById('blog').classList.remove('show');
+        document.getElementById('blog').innerHTML = '';
+        document.getElementById('btn-ready').textContent = "⚡ READY!";
+        document.getElementById('btn-ready').disabled = false;
+        document.getElementById('ready-hint').textContent = 'Tap when set!';
+        document.getElementById('g-echip').style.display = 'block';
+        document.getElementById('gc-phase').textContent = 'Placement Phase';
+        document.getElementById('gc-phase').style.color = '';
+        document.getElementById('ptip').classList.add('show');
+        document.getElementById('my-st').textContent = 'Placing units...';
+        document.getElementById('enemy-st').textContent = 'Setting up...';
+        
+        this.myBoard = Array(40).fill(null); this.oppBoard = Array(40).fill(null);
+        
+        engine.startPlacement();
+        engine.flipY = (this.myRole === 'red');
+        engine.resize();
+        
+        const matchRef = ref(db, `matches/${this.matchId}`);
+        this.matchDisconnectRef = onDisconnect(matchRef);
+        this.matchDisconnectRef.update({ status: 'abandoned', leaver: this.myRole });
+
+        onValue(matchRef, async (snap) => {
+            const data = snap.val(); if (!data) return;
+
+            const enemyRole = this.myRole === 'blue' ? 'red' : 'blue';
+
+            if (data.status === 'abandoned') {
+                if (data.leaver !== this.myRole && engine.phase !== 'end' && engine.phase !== 'end_v') {
+                    engine.triggerGameEndLocal(this.myRole, "❄️ OPPONENT FLED!");
+                }
+                return;
+            }
+
+            if (data.status === 'finished' && engine.phase !== 'end_v') {
+                engine.triggerGameEndLocal(data.winnerRole, data.endReason);
+            }
+
+            if (data[`${enemyRole}Board`]) {
+                this.oppBoard = [...data[`${enemyRole}Board`]];
+                if (engine.phase === 'placement') this.syncOpponentEntities();
+            }
+
+            if (data[`${enemyRole}Ready`]) {
+                document.getElementById('enemy-st').textContent = "⚡ READY!";
+                document.getElementById('ec-v').textContent = "Enemy is ready to fight!";
+                addLog('❄️ Enemy locked in!', 'info');
+            }
+
+            if (data.status === 'placement' && data.blueReady && data.redReady) {
+                if (this.myRole === 'red') await update(matchRef, { status: 'battle' });
+            }
+
+            if (data.status === 'battle' && engine.phase === 'placement') {
+                this.triggerBattle(data.redBoard, data.blueBoard);
+            }
+        });
+
+        let startTime = Date.now();
+        this.timerInterval = setInterval(() => {
+            if (engine.phase === 'placement') {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                let timeLeft = Math.max(0, 120 - elapsed);
+                const tEl = document.getElementById('gc-timer');
+                tEl.textContent = timeLeft;
+                tEl.classList.toggle('urgent', timeLeft <= 15);
+                if (timeLeft <= 0) { clearInterval(this.timerInterval); this.declareReady(); }
+            }
+        }, 250);
+        
+        toast('❄️ Welcome to the Ice Arena! Place your units!');
+    },
+
+    selectUnit(type, cost) {
+        document.querySelectorAll('.shop-card').forEach(el => el.classList.remove('sel'));
+        document.getElementById(`shop-${type}`).classList.add('sel');
+        this.selectedUnit = type; this.selectedCost = cost;
+        document.getElementById('ptip').classList.add('show');
+        sfx.pop();
+        
+        const nm = {soldier: '⚔️ Soldier', barrier: '🧊 Ice Wall', defense: '🔫 Cannon', arrow: '🏹 Archer'};
+        toast(`${nm[type]} selected! Tap your blue zone!`);
+    },
+
+    async placeUnit(index, r, c) {
+        if (this.userData.gold < this.selectedCost) {
+            toast('💰 Not enough gold!');
+            engine.floatingTexts.push(new FloatingText((c*TILE_SIZE)+engine.offsetX, (r*TILE_SIZE)+engine.offsetY, "No gold! 💰", "#e74c3c", 15, true));
+            return;
+        }
+        this.userData.gold -= this.selectedCost;
+        document.getElementById('gc-gold').textContent = this.userData.gold;
+        this.myBoard[index] = this.selectedUnit;
+        
+        engine.entities = engine.entities.filter(e => !(e.team === gameApp.myRole && Math.round((e.y-engine.offsetY)/TILE_SIZE) === r && Math.round((e.x-engine.offsetX)/TILE_SIZE) === c && e.type !== 'main'));
+        engine.entities.push(new Entity(r, c, gameApp.myRole, this.selectedUnit));
+        
+        engine.spawnParticles(c*TILE_SIZE+engine.offsetX+TILE_SIZE/2, r*TILE_SIZE+engine.offsetY+TILE_SIZE/2, '#ffe066', 7, 3, 'glow');
+        addLog(`Placed ${this.selectedUnit} ❄️`, 'deploy');
+        sfx.place();
+        
+        await update(ref(db, `matches/${this.matchId}`), { [`${this.myRole}Board`]: this.myBoard });
+        await update(ref(db, `users/${this.user.uid}`), { gold: this.userData.gold });
+    },
+
+    async declareReady() {
+        clearInterval(this.timerInterval);
+        document.getElementById('btn-ready').textContent = "⏳ Waiting...";
+        document.getElementById('btn-ready').disabled = true;
+        document.getElementById('ready-hint').textContent = 'Waiting for opponent!';
+        document.getElementById('my-st').textContent = '⚡ LOCKED IN!';
+        document.getElementById('ptip').classList.remove('show');
+        
+        toast('✅ Formation locked! Waiting for opponent...');
+        sfx.pop();
+        
+        await update(ref(db, `matches/${this.matchId}`), { [`${this.myRole}Ready`]: true });
+    },
+
+    triggerBattle(redBoard, blueBoard) {
+        this.redBoardData = redBoard; this.blueBoardData = blueBoard;
+        document.getElementById('shop-bar').style.display = 'none';
+        document.getElementById('ptip').classList.remove('show');
+        document.getElementById('g-echip').style.display = 'none';
+        
+        document.getElementById('gc-phase').textContent = "Scouting Enemy... 👀";
+        
+        engine.prepareBattle(redBoard, blueBoard);
+        canvas.classList.add('zoom-battle');
+        
+        let countdown = 5; document.getElementById('gc-timer').textContent = countdown;
+        const revealInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) { document.getElementById('gc-timer').textContent = countdown; } 
+            else {
+                clearInterval(revealInterval);
+                document.getElementById('gc-phase').textContent = "⚔️ LIVE BATTLE!";
+                document.getElementById('gc-phase').style.color = "#e74c3c";
+                document.getElementById('gc-timer').textContent = "⚔️";
+                document.getElementById('str-hud').classList.add('show');
+                document.getElementById('blog').classList.add('show');
+                engine.phase = 'battle';
+                addLog('⚔️ BATTLE STARTED! Fight hard!', 'info');
+                toast('⚔️ BATTLE BEGINS! Good luck! ❄️');
+                setTimeout(() => { if(engine.phase === 'battle') engine.triggerGameEnd('draw', "⏰ Time ran out!"); }, 120000);
+            }
+        }, 1000);
+    },
+
+    async endGame(winnerRole, reason) {
+        engine.phase = 'end_v';
+        let isWin = winnerRole === this.myRole;
+        let isDraw = winnerRole === 'draw';
+        
+        if (this.matchDisconnectRef) this.matchDisconnectRef.cancel();
+
+        let totalPot = this.getSpent(this.myBoard) + this.getSpent(this.myRole === 'blue' ? this.redBoardData : this.blueBoardData);
+
+        const surv = engine.entities.filter(e => !e.isDead && e.type !== 'main').length;
+        
+        const em = document.getElementById('res-em');
+        const tt = document.getElementById('res-ttl');
+        const gr = document.getElementById('res-gold');
+        const grd = document.getElementById('res-grid');
+        
+        document.getElementById('res-surv').textContent = surv;
+        document.getElementById('res-reason').textContent = reason;
+        
+        tt.className = 'res-ttl'; gr.className = 'res-v'; grd.className = 'res-v';
+        
+        const rsEl = document.getElementById('res-snow');
+        rsEl.innerHTML = '';
+        for(let i=0; i<14; i++){
+            const f = document.createElement('div');
+            f.className = 'res-flake';
+            f.textContent = ['❄️','⛄','🌨','🏔️','🧊'][Math.floor(Math.random()*5)];
+            f.style.cssText = `left:${Math.random()*100}%;animation-duration:${Math.random()*4+3}s;animation-delay:${Math.random()*2}s;font-size:${Math.random()*1.8+0.7}rem;`;
+            rsEl.appendChild(f);
+        }
+
+        if (isDraw) {
+            em.textContent = '🤝'; tt.textContent = 'DRAW!'; tt.classList.add('draw');
+            gr.textContent = '+0'; gr.classList.add('neu');
+            grd.textContent = '±0'; grd.classList.add('neu');
+        } else if (isWin) {
+            em.textContent = '🏆'; tt.textContent = 'VICTORY!'; tt.classList.add('win');
+            gr.textContent = `+${totalPot}`; gr.classList.add('pos');
+            grd.textContent = '+5'; grd.classList.add('pos');
+            this.userData.gold += totalPot; this.userData.grids += 5; this.userData.streak = (this.userData.streak || 0) + 1;
+        } else {
+            em.textContent = '💀'; tt.textContent = 'DEFEAT!'; tt.classList.add('loss');
+            gr.textContent = '+0'; gr.classList.add('neg');
+            grd.textContent = '-0'; grd.classList.add('neg');
+            this.userData.streak = 0;
+        }
+
+        await update(ref(db, `users/${this.user.uid}`), this.userData);
+        if(this.myRole === 'blue') await remove(ref(db, `matches/${this.matchId}`));
+
+        document.getElementById('result-ov').classList.add('show');
+    },
+
+    returnToLobby() {
+        document.getElementById('result-ov').classList.remove('show');
+        document.getElementById('screen-game').classList.remove('active');
+        document.getElementById('str-hud').classList.remove('show');
+        document.getElementById('blog').classList.remove('show');
+        
+        document.getElementById('gc-phase').textContent = 'Placement Phase';
+        document.getElementById('gc-phase').style.color = '';
+        document.getElementById('gc-timer').textContent = '120';
+        document.getElementById('gc-timer').classList.remove('urgent');
+        document.getElementById('enemy-st').textContent = 'Setting up...';
+        document.getElementById('my-st').textContent = 'Placing units...';
+        document.getElementById('btn-mm').disabled = false;
+        
+        this.matchId = null; this.myRole = null; 
+        canvas.classList.remove('zoom-battle');
+        engine.phase = 'lobby';
+        
+        this.updateLobbyUI();
+        this.switchScreen('screen-lobby');
+    }
+};
+
+onAuthStateChanged(auth, user => {
+    const tips = ['🌨 Loading snow particles...','🏔 Painting mountains...','🧊 Freezing the battlefield...','⛄ Waking up the yetis...','❄️ Almost ready to play!'];
+    let ti = 0;
+    const tEl = document.getElementById('ld-tip');
+    const tIv = setInterval(() => {
+        ti = (ti+1) % tips.length;
+        tEl.textContent = tips[ti];
+    }, 600);
+    
+    if(user) {
+        gameApp.initUser(user);
+        clearInterval(tIv);
+    } else {
+        setTimeout(() => {
+            document.getElementById('loader').classList.add('hide');
+            gameApp.switchScreen('screen-auth');
+            clearInterval(tIv);
+        }, 2200);
+    }
+});
+
+window.gameApp = gameApp;
+</script>
+</body>
+                                      </html>
