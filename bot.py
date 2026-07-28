@@ -58,6 +58,11 @@ OWNER_ID = os.environ.get("OWNER_ID")  # optional: restrict who can search/recei
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 PORT = int(os.environ.get("PORT", "8080"))
 
+# Users must be a member of this channel to use the bot at all. Overridable
+# at runtime (persisted in Mongo) via the owner-only "/update channel <id>"
+# command, so a redeploy isn't needed to point at a different channel.
+DEFAULT_JOIN_CHANNEL_ID = os.environ.get("JOIN_CHANNEL_ID", "-1003523482123")
+
 PAGE_SIZE = 8  # results per page in lists
 
 LARGE_FILE_BYTES = 50 * 1024 * 1024  # 50 MB
@@ -75,10 +80,30 @@ logger = logging.getLogger("tgfilebot")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client[MONGO_DB_NAME]
 files_col = db["files"]
+settings_col = db["settings"]  # single doc, _id="config", for runtime-editable settings
 
 files_col.create_index([("file_unique_id", ASCENDING)], unique=True)
 files_col.create_index([("name", TEXT), ("caption", TEXT)], name="name_caption_text")
 files_col.create_index([("file_type", ASCENDING), ("saved_at", ASCENDING)])
+
+
+def _load_join_channel_id() -> str:
+    """Mongo (set via /update channel) takes priority over the env var /
+    hardcoded default, so a channel change survives redeploys."""
+    try:
+        doc = settings_col.find_one({"_id": "config"})
+    except PyMongoError:
+        logger.exception("Couldn't read settings from MongoDB — using default join channel")
+        doc = None
+    if doc and doc.get("join_channel_id"):
+        return str(doc["join_channel_id"])
+    return DEFAULT_JOIN_CHANNEL_ID
+
+
+# Mutable at runtime by the owner-only /update command — not a constant.
+_join_channel_id = _load_join_channel_id()
+_cached_invite_link = None
+_cached_invite_link_for = None
 
 TYPE_ICONS = {
     "document": "📄",
@@ -196,6 +221,80 @@ def is_owner(update: Update) -> bool:
         return True
     user = update.effective_user
     return user is not None and str(user.id) == str(OWNER_ID)
+
+
+# ---------------------------------------------------------------------------
+# Join-gate: require channel membership before any bot feature works
+# ---------------------------------------------------------------------------
+MEMBER_STATUSES = ("member", "administrator", "creator")
+
+
+async def is_channel_member(context: ContextTypes.DEFAULT_TYPE, user_id) -> bool:
+    if not _join_channel_id:
+        return True  # gating disabled if no channel is configured
+    try:
+        member = await context.bot.get_chat_member(_join_channel_id, user_id)
+    except Exception:
+        logger.exception(
+            "Membership check failed for user %s against channel %s "
+            "(bot may not be an admin there, or the id is wrong)",
+            user_id, _join_channel_id,
+        )
+        return False
+    return member.status in MEMBER_STATUSES
+
+
+async def get_channel_join_link(context: ContextTypes.DEFAULT_TYPE):
+    """Returns a public t.me/ link if the channel has a username, otherwise
+    an invite link (generated via the Bot API — requires the bot to be an
+    admin with invite permissions, which it already needs for indexing).
+    Cached per channel id; invalidated whenever /update channel changes it."""
+    global _cached_invite_link, _cached_invite_link_for
+    if _cached_invite_link and _cached_invite_link_for == _join_channel_id:
+        return _cached_invite_link
+    try:
+        chat = await context.bot.get_chat(_join_channel_id)
+        if chat.username:
+            link = f"https://t.me/{chat.username}"
+        else:
+            link = chat.invite_link or await context.bot.export_chat_invite_link(_join_channel_id)
+    except Exception:
+        logger.exception("Couldn't resolve an invite link for channel %s", _join_channel_id)
+        return None
+    _cached_invite_link = link
+    _cached_invite_link_for = _join_channel_id
+    return link
+
+
+def build_join_gate_keyboard(join_link):
+    rows = [[InlineKeyboardButton("📢 Join Channel", url=join_link)]]
+    rows.append([InlineKeyboardButton("✅ I've joined", callback_data="checkjoin")])
+    return InlineKeyboardMarkup(rows)
+
+
+async def send_join_gate(context: ContextTypes.DEFAULT_TYPE, chat_id):
+    join_link = await get_channel_join_link(context)
+    text = (
+        "🔒 *Join our channel to use this bot.*\n\n"
+        "Tap *Join Channel* below, then tap *I've joined* to continue."
+    )
+    keyboard = build_join_gate_keyboard(join_link) if join_link else None
+    if not join_link:
+        text += (
+            "\n\n⚠️ Couldn't generate an invite link right now — ask the "
+            "admin to check that the bot is an admin of the channel."
+        )
+    await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=keyboard)
+
+
+async def require_membership(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Call at the top of any handler that should be gated. Sends the join
+    prompt and returns False if the user isn't a member yet."""
+    user = update.effective_user
+    if user is not None and await is_channel_member(context, user.id):
+        return True
+    await send_join_gate(context, update.effective_chat.id)
+    return False
 
 
 def human_size(num_bytes):
@@ -341,20 +440,26 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
+START_TEXT = (
+    "👋 *File Search Bot*\n\n"
+    "Send me part of a file name and I'll search the channel's indexed "
+    "files.\n\n"
+    "Commands:\n"
+    "• /browse — browse files by type\n"
+    "• /recent — last 10 uploads\n"
+    "• /stats — indexed file count"
+)
+
+
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 *File Search Bot*\n\n"
-        "Send me part of a file name and I'll search the channel's indexed "
-        "files.\n\n"
-        "Commands:\n"
-        "• /browse — browse files by type\n"
-        "• /recent — last 10 uploads\n"
-        "• /stats — indexed file count",
-        parse_mode="Markdown",
-    )
+    if not await require_membership(update, context):
+        return
+    await update.message.reply_text(START_TEXT, parse_mode="Markdown")
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await require_membership(update, context):
+        return
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
@@ -375,6 +480,8 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await require_membership(update, context):
+        return
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
@@ -390,6 +497,8 @@ async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await require_membership(update, context):
+        return
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
@@ -452,7 +561,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     chat_id = update.effective_chat.id
 
-    # No blanket auth gate here: viewing search results, paging, and
+    # --- Re-check channel membership after the user taps "I've joined" ---
+    if data == "checkjoin":
+        user = update.effective_user
+        if user is not None and await is_channel_member(context, user.id):
+            await query.answer("✅ Joined!")
+            await query.edit_message_text("✅ *You're in!*\n\n" + START_TEXT, parse_mode="Markdown")
+        else:
+            await query.answer(
+                "You haven't joined yet — tap Join Channel, then try again.", show_alert=True
+            )
+        return
+
+    # Every other button is gated on channel membership, same as the
+    # message-based commands — a user could otherwise still be holding
+    # buttons from before they left the channel.
+    if not await require_membership(update, context):
+        await query.answer()
+        return
+
+    # No further auth gate here: viewing search results, paging, and
     # sending a file are public actions any user should be able to tap on
     # their own search. Delete and rename are checked individually below,
     # since those must stay owner-only even when search is public.
@@ -717,6 +845,8 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     # "awaiting_rename_for" / "awaiting_password_for" are only ever set
     # inside their respective callback branches above. A user's own
     # user_data can only ever contain keys their own button taps set.
+    if not await require_membership(update, context):
+        return
     chat_id = update.effective_chat.id
 
     pending_pw_doc_id = context.user_data.get("awaiting_password_for")
@@ -770,8 +900,65 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 # ---------------------------------------------------------------------------
-# Global error handler
+# Owner command: change the join-gate channel without a redeploy
 # ---------------------------------------------------------------------------
+async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_owner(update):
+        await update.message.reply_text("This command is only available to the bot owner.")
+        return
+
+    args = context.args
+    usage = (
+        "Usage: `/update channel <channel_id>`\n"
+        "Example: `/update channel -1001234567890`"
+    )
+    if not args or args[0].lower() != "channel":
+        await update.message.reply_text(usage, parse_mode="Markdown")
+        return
+    if len(args) < 2:
+        await update.message.reply_text(
+            "Please include the new channel id.\n" + usage, parse_mode="Markdown"
+        )
+        return
+
+    new_channel_id = args[1]
+    if not (new_channel_id.lstrip("-").isdigit() or new_channel_id.startswith("@")):
+        await update.message.reply_text(
+            "That doesn't look like a valid channel id. Use the numeric id "
+            "(e.g. `-1001234567890`) or `@username`.",
+            parse_mode="Markdown",
+        )
+        return
+
+    # Confirm the bot can actually see this chat before committing to it.
+    try:
+        chat = await context.bot.get_chat(new_channel_id)
+    except Exception:
+        logger.exception("update_cmd: couldn't resolve channel %s", new_channel_id)
+        await update.message.reply_text(
+            "⚠️ Couldn't find that channel — make sure the bot is an admin "
+            "there and the id is correct."
+        )
+        return
+
+    global _join_channel_id, _cached_invite_link, _cached_invite_link_for
+    try:
+        settings_col.update_one(
+            {"_id": "config"}, {"$set": {"join_channel_id": new_channel_id}}, upsert=True
+        )
+    except PyMongoError:
+        logger.exception("update_cmd: failed to persist new join channel to MongoDB")
+        await update.message.reply_text(
+            "⚠️ Couldn't save that to the database — try again in a moment."
+        )
+        return
+
+    _join_channel_id = new_channel_id
+    _cached_invite_link = None
+    _cached_invite_link_for = None
+    await update.message.reply_text(f"✅ Join-gate channel updated to: {chat.title or new_channel_id}")
+
+
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
     """Catches any exception not already handled inside a specific handler,
     so failures show up in the logs (and, where possible, to the owner)
@@ -797,6 +984,7 @@ def build_app() -> Application:
     application.add_handler(CommandHandler("stats", stats_cmd))
     application.add_handler(CommandHandler("browse", browse_cmd))
     application.add_handler(CommandHandler("recent", recent_cmd))
+    application.add_handler(CommandHandler("update", update_cmd))
 
     application.add_handler(MessageHandler(filters.ChatType.CHANNEL, index_channel_post))
     application.add_handler(CallbackQueryHandler(handle_callback))
