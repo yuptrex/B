@@ -565,8 +565,26 @@ def build_app() -> Application:
 def main():
     application = build_app()
 
-    if WEBHOOK_URL:
-        webhook_base = WEBHOOK_URL.rstrip("/")
+    # On Render (or any host with an expected HTTP port), you MUST run in
+    # webhook mode: run_webhook() binds $PORT immediately, which is what
+    # stops the platform from timing out the deploy. run_polling() never
+    # binds a port, so if this falls through to polling on a Web Service,
+    # Render waits for a port that never opens and kills the deploy.
+    render_url = os.environ.get("RENDER_EXTERNAL_URL")  # auto-set by Render
+    on_render = os.environ.get("RENDER") == "true"  # set on every Render service
+    webhook_target = WEBHOOK_URL or render_url
+
+    if on_render and not webhook_target:
+        # Fail fast and loud instead of quietly starting a poller that will
+        # never bind a port and burn the whole deploy timeout.
+        raise RuntimeError(
+            "Running on Render but no webhook URL could be determined. "
+            "Set the WEBHOOK_URL env var to this service's public URL "
+            "(Render dashboard -> service -> the https://<name>.onrender.com address)."
+        )
+
+    if webhook_target:
+        webhook_base = webhook_target.rstrip("/")
         if not webhook_base.startswith(("http://", "https://")):
             webhook_base = f"https://{webhook_base}"
         full_webhook_url = f"{webhook_base}/{BOT_TOKEN}"
@@ -578,10 +596,11 @@ def main():
             url_path=BOT_TOKEN,
             webhook_url=full_webhook_url,
             allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
         )
     else:
-        logger.info("Starting in polling mode")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        logger.info("Starting in polling mode (no WEBHOOK_URL / RENDER_EXTERNAL_URL set)")
+        application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 
 if __name__ == "__main__":
