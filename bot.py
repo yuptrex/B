@@ -60,6 +60,9 @@ PORT = int(os.environ.get("PORT", "8080"))
 
 PAGE_SIZE = 8  # results per page in lists
 
+LARGE_FILE_BYTES = 50 * 1024 * 1024  # 50 MB
+AUTO_DELETE_SECONDS = 5 * 60  # 5 minutes
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -263,7 +266,7 @@ def format_preview_text(doc) -> str:
         f"*Size:* {size}\n"
         f"*Added:* {date_str}"
         f"{lock_line}\n\n"
-        f"_powered by @z5met_"
+        f"_powered by @z5met & @z5meta_"
     )
 
 
@@ -451,7 +454,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- Pagination ---
     if data.startswith("page:"):
-        _, tag, page_str = data.split(":", 2)
+        # Tags themselves contain colons (e.g. "search:<chat_id>:<hash>",
+        # "type:<file_type>:<chat_id>"), so a fixed-count split mangles
+        # them. The page number is always the last, numeric segment —
+        # split it off from the right instead.
+        rest = data[len("page:"):]
+        tag, page_str = rest.rsplit(":", 1)
         page = int(page_str)
         docs = _list_cache.get((chat_id, tag))
         await query.answer()
@@ -569,26 +577,75 @@ def _guess_back_tag(chat_id, doc_id):
     return None
 
 
+async def _auto_delete_job(context: ContextTypes.DEFAULT_TYPE):
+    """Deletes the file message + its warning message once the auto-delete
+    delay for a large (>50MB) file has elapsed. Runs even if the chat has
+    moved on — failures (e.g. the user already deleted it, or >48h old) are
+    logged and swallowed rather than raised, since there's no one to report
+    a job-queue error to."""
+    chat_id, message_ids = context.job.data
+    for message_id in message_ids:
+        try:
+            await context.bot.delete_message(chat_id, message_id)
+        except Exception:
+            logger.exception(
+                "Auto-delete: failed to delete message %s in chat %s", message_id, chat_id
+            )
+
+
 async def _send_stored_file(context, chat_id, doc):
     label = display_label(doc)
     ftype = doc["file_type"]
     file_id = doc["file_id"]
+    file_size = doc.get("file_size") or 0
+    sent_message = None
     try:
         if ftype == "document":
-            await context.bot.send_document(chat_id, file_id, caption=f"📄 {label}")
+            sent_message = await context.bot.send_document(chat_id, file_id, caption=f"📄 {label}")
         elif ftype == "video":
-            await context.bot.send_video(chat_id, file_id, caption=f"🎥 {label}")
+            sent_message = await context.bot.send_video(chat_id, file_id, caption=f"🎥 {label}")
         elif ftype == "audio":
-            await context.bot.send_audio(chat_id, file_id, caption=f"🎵 {label}")
+            sent_message = await context.bot.send_audio(chat_id, file_id, caption=f"🎵 {label}")
         elif ftype == "voice":
-            await context.bot.send_voice(chat_id, file_id)
+            sent_message = await context.bot.send_voice(chat_id, file_id)
         elif ftype == "video_note":
-            await context.bot.send_video_note(chat_id, file_id)
+            sent_message = await context.bot.send_video_note(chat_id, file_id)
         elif ftype == "photo":
-            await context.bot.send_photo(chat_id, file_id, caption=f"🖼 {label}")
+            sent_message = await context.bot.send_photo(chat_id, file_id, caption=f"🖼 {label}")
     except Exception:
         logger.exception("Failed to resend file %s", doc.get("_id"))
         await context.bot.send_message(chat_id, f"⚠️ Couldn't resend: {label}")
+        return
+
+    if sent_message is None or file_size <= LARGE_FILE_BYTES:
+        return
+
+    # Large file (>50MB): warn the user and schedule both messages for
+    # auto-deletion, since Telegram bots can only delete messages they
+    # themselves sent (within 48h), never files already opened/downloaded
+    # on the recipient's device.
+    warning_message = await context.bot.send_message(
+        chat_id,
+        "⚠️ *This file is larger than 50MB.*\n"
+        "It will be automatically deleted from this chat in *5 minutes*.\n\n"
+        "Please forward it to another chat or save it elsewhere *before* "
+        "opening it.",
+        parse_mode="Markdown",
+    )
+
+    if context.job_queue is not None:
+        context.job_queue.run_once(
+            _auto_delete_job,
+            AUTO_DELETE_SECONDS,
+            data=(chat_id, [sent_message.message_id, warning_message.message_id]),
+            name=f"autodelete:{chat_id}:{sent_message.message_id}",
+        )
+    else:
+        logger.warning(
+            "job_queue is unavailable — cannot auto-delete large file %s. "
+            "Install the 'job-queue' extra: python-telegram-bot[job-queue]",
+            doc.get("_id"),
+        )
 
 
 # ---------------------------------------------------------------------------
