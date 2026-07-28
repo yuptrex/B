@@ -237,7 +237,38 @@ practice.
   fine for single-owner use; a multi-instance or high-traffic deployment
   would want this in Mongo/Redis instead.
 
-## 8. Known limitations
+## 8. Password-protected files
+
+Any file can be protected with a password, set at upload time:
+
+- **From the camera app:** type a password into the field above the
+  Send button before sending. Leave it blank for no password.
+- **Manual channel upload:** put `pass:yourpassword` anywhere in the
+  caption when you post the file (e.g. `family photo pass:1234`). The
+  bot strips the tag out — it never appears in search results or the
+  preview card's caption text.
+
+When a protected file's **Send file** button is tapped, the bot asks
+for the password in a follow-up DM before sending. Wrong passwords
+are rejected (5 attempts per file per chat, then you have to tap
+Send file again to retry). Passwords are stored as a salted SHA-256
+hash, never in plaintext — the owner can't look them up either, only
+verify a guess against the hash.
+
+Renaming a file does not change or clear its password.
+
+## 9. Known limitations
+
+- **A bot never receives its own messages.** If you have another app or
+  script post to the channel using this bot's own `BOT_TOKEN` (for
+  example, a web app that calls `sendDocument` directly), those messages
+  will show up in the channel but will **never** be indexed — Telegram
+  does not deliver `channel_post` updates for messages sent by the bot
+  itself, regardless of admin rights, `CHANNEL_ID`, or any other setting.
+  If you want another tool to auto-post into the same channel and have
+  it get indexed, give that tool its **own separate bot** (a different
+  token from BotFather), added as admin to the same channel. The
+  indexer bot will then see its posts as ordinary external messages.
 
 - Voice notes and video notes have no filename and Telegram doesn't allow
   captions on them either, so they're only findable if you search by

@@ -16,9 +16,13 @@ Run modes:
 - Webhook: good for a Render "Web Service" (set WEBHOOK_URL env var).
 """
 
+import hashlib
+import hmac
 import logging
 import math
 import os
+import re
+import secrets
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -82,27 +86,77 @@ TYPE_ICONS = {
     "video_note": "⭕",
 }
 
+# Matches "pass:1234" (case-insensitive) anywhere in a caption, capturing
+# everything up to the next whitespace as the password. Used to let a
+# caption both set a per-file password AND carry ordinary searchable text,
+# e.g. "family photo pass:1234" -> password "1234", searchable text
+# "family photo".
+PASSWORD_TAG_RE = re.compile(r"(?i)\bpass:(\S+)")
+
+
+def extract_password_tag(caption: str):
+    """Pulls a 'pass:XXXX' tag out of a caption.
+
+    Returns (password_or_None, caption_with_tag_removed). The returned
+    caption has the tag stripped and whitespace collapsed, so the raw
+    password never lingers in the searchable/displayed caption text.
+    """
+    if not caption:
+        return None, caption or ""
+    match = PASSWORD_TAG_RE.search(caption)
+    if not match:
+        return None, caption
+    password = match.group(1)
+    cleaned = PASSWORD_TAG_RE.sub("", caption)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return password, cleaned
+
+
+def hash_password(password: str, salt: bytes | None = None):
+    """Salted SHA-256. Good enough here: passwords are short shared-family
+    secrets behind a rate-limited bot UI, not a high-value auth system —
+    but we still never store or log the plaintext."""
+    if salt is None:
+        salt = secrets.token_bytes(16)
+    digest = hashlib.sha256(salt + password.encode("utf-8")).hexdigest()
+    return salt.hex(), digest
+
+
+def verify_password(password: str, salt_hex: str, digest_hex: str) -> bool:
+    salt = bytes.fromhex(salt_hex)
+    _, candidate_digest = hash_password(password, salt)
+    return hmac.compare_digest(candidate_digest, digest_hex)
+
 
 def save_file_record(*, file_id, file_unique_id, name, caption, file_type,
                       chat_id, message_id, file_size=None):
+    password, clean_caption = extract_password_tag(caption)
+
     doc = {
         "file_id": file_id,
         "file_unique_id": file_unique_id,
         "name": name or "",
-        "caption": caption or "",
+        "caption": clean_caption or "",
         "file_type": file_type,
         "chat_id": chat_id,
         "message_id": message_id,
         "file_size": file_size,
         "saved_at": datetime.now(timezone.utc),
     }
+    if password:
+        salt_hex, digest_hex = hash_password(password)
+        doc["pw_salt"] = salt_hex
+        doc["pw_hash"] = digest_hex
     try:
         files_col.update_one(
             {"file_unique_id": file_unique_id},
             {"$set": doc},
             upsert=True,
         )
-        logger.info("Saved file record: %s (%s)", name or caption, file_type)
+        logger.info(
+            "Saved file record: %s (%s)%s",
+            name or clean_caption, file_type, " [password-protected]" if password else "",
+        )
     except PyMongoError:
         logger.exception("Failed to save file record to MongoDB")
 
@@ -203,6 +257,7 @@ def format_preview_text(doc) -> str:
     saved_at = doc.get("saved_at")
     date_str = saved_at.strftime("%Y-%m-%d %H:%M UTC") if saved_at else "unknown date"
     caption = doc.get("caption") or "—"
+    lock_line = "\n🔒 *Password required to send*" if doc.get("pw_hash") else ""
 
     return (
         f"{icon} *{escape_md(label)}*\n\n"
@@ -210,6 +265,7 @@ def format_preview_text(doc) -> str:
         f"*Size:* {size}\n"
         f"*Added:* {date_str}\n"
         f"*Caption:* {escape_md(caption)}"
+        f"{lock_line}"
     )
 
 
@@ -438,14 +494,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # --- Send the actual file ---
+    # --- Send the actual file (password-gated if the file has one) ---
     if data.startswith("send:"):
         doc_id = data.split(":", 1)[1]
         doc = _find_by_id(doc_id)
-        await query.answer("Sending...")
         if doc is None:
+            await query.answer()
             await context.bot.send_message(chat_id, "File not found (it may have been deleted).")
             return
+        if doc.get("pw_hash"):
+            await query.answer()
+            context.user_data["awaiting_password_for"] = doc_id
+            await context.bot.send_message(
+                chat_id,
+                f"🔒 *{escape_md(display_label(doc))}* is password-protected.\n"
+                f"Send the password to receive it:",
+                parse_mode="Markdown",
+            )
+            return
+        await query.answer("Sending...")
         await _send_stored_file(context, chat_id, doc)
         return
 
@@ -527,13 +594,57 @@ async def _send_stored_file(context, chat_id, doc):
 
 
 # ---------------------------------------------------------------------------
-# Plain text router: rename reply vs. search query
+# Plain text router: password reply vs. rename reply vs. search query
 # ---------------------------------------------------------------------------
+# Tracks failed password attempts per (chat_id, doc_id) so a script can't
+# brute-force a short password by hammering the bot. Reset on success or
+# after MAX_PASSWORD_ATTEMPTS (the user has to re-tap Send file to retry).
+_password_attempts = {}
+MAX_PASSWORD_ATTEMPTS = 5
+
+
 async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # No owner check needed here: user_data is per-user, and
-    # "awaiting_rename_for" is only ever set inside the owner-gated
-    # rename: callback branch above. A non-owner's user_data can never
-    # contain this key, so this path is unreachable for them.
+    # "awaiting_rename_for" / "awaiting_password_for" are only ever set
+    # inside their respective callback branches above. A user's own
+    # user_data can only ever contain keys their own button taps set.
+    chat_id = update.effective_chat.id
+
+    pending_pw_doc_id = context.user_data.get("awaiting_password_for")
+    if pending_pw_doc_id:
+        attempt_key = (chat_id, pending_pw_doc_id)
+        attempts = _password_attempts.get(attempt_key, 0)
+        if attempts >= MAX_PASSWORD_ATTEMPTS:
+            context.user_data.pop("awaiting_password_for", None)
+            _password_attempts.pop(attempt_key, None)
+            await update.message.reply_text(
+                "❌ Too many incorrect attempts. Tap Send file again to retry."
+            )
+            return
+
+        submitted = update.message.text.strip()
+        doc = _find_by_id(pending_pw_doc_id)
+        if doc is None:
+            context.user_data.pop("awaiting_password_for", None)
+            _password_attempts.pop(attempt_key, None)
+            await update.message.reply_text("That file no longer exists.")
+            return
+
+        salt_hex, digest_hex = doc.get("pw_salt"), doc.get("pw_hash")
+        if salt_hex and digest_hex and verify_password(submitted, salt_hex, digest_hex):
+            context.user_data.pop("awaiting_password_for", None)
+            _password_attempts.pop(attempt_key, None)
+            await update.message.reply_text("✅ Correct — sending...")
+            await _send_stored_file(context, chat_id, doc)
+        else:
+            _password_attempts[attempt_key] = attempts + 1
+            remaining = MAX_PASSWORD_ATTEMPTS - _password_attempts[attempt_key]
+            await update.message.reply_text(
+                f"❌ Incorrect password. {remaining} attempt(s) left."
+                if remaining > 0 else "❌ Incorrect password."
+            )
+        return
+
     pending_doc_id = context.user_data.get("awaiting_rename_for")
     if pending_doc_id:
         new_name = update.message.text.strip()
