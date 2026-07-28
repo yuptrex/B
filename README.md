@@ -129,15 +129,49 @@ a Web Service — simpler, no webhook/SSL/public-URL setup needed.
 After deploying, open the **Logs** tab and repeat the verification
 checklist from §3 against the live deployment.
 
-### Optional: webhook mode instead
+### Webhook mode on a free Web Service (recommended for light/occasional use)
 
-Set `WEBHOOK_URL` to your Render Web Service's public URL and the bot
-registers a webhook at startup instead of polling. Note: `requirements.txt`
-already includes the `[webhooks]` extra (pulls in `tornado`), which
-`run_webhook()` needs — without it, webhook mode fails on startup with an
-import error. Free-tier Render web services sleep after inactivity, which
-delays webhook delivery; a Background Worker with polling avoids this
-entirely, which is why it's the default recommendation here.
+If your bot only gets occasional traffic (a few messages a day), a
+**Web Service** running in webhook mode is the better fit — a free
+Background Worker's `getUpdates` polling loop runs nonstop even when
+nobody's using the bot, which burns free instance-hours for no benefit
+and can trigger Render's health-check `Timed Out` restarts (Render can't
+always tell "quietly polling" apart from "hung," since a worker exposes
+no HTTP port for Render to check). A Web Service has a real HTTP
+endpoint Render can health-check properly, and it fully spins down to
+zero cost when idle instead of polling in the background.
+
+1. On Render: **New → Web Service** → connect the repo.
+2. Runtime: **Python 3**. Instance type: **Free**.
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `python bot.py`
+5. Environment tab → add `BOT_TOKEN`, `MONGO_URI`, `MONGO_DB_NAME`,
+   `CHANNEL_ID`, `OWNER_ID`, same as the worker setup.
+6. Add one more variable: `WEBHOOK_URL` = your service's Render URL,
+   e.g. `https://your-app-name.onrender.com` (visible at the top of the
+   service page once created — you may need to deploy once first to see
+   it, then add this var and redeploy).
+7. Deploy. Check the **Logs** tab for `Starting in webhook mode on port
+   10000` followed by `Registering webhook URL: https://...` — this
+   confirms the bot registered the webhook with Telegram successfully.
+
+**What to expect:** the free instance spins down after 15 minutes with
+no incoming traffic. The next message after that triggers a cold start —
+about 50 seconds — before you get a reply; after that it's instant again
+for 15 minutes. This is a one-time delay per idle gap, not a failure —
+the message isn't lost, it's just waiting for the instance to wake up.
+
+**Known edge case worth knowing about, not acting on:** Telegram waits
+up to 60 seconds for your webhook to return `200 OK` before it retries
+delivery. Render's ~50 second cold start is close enough to that limit
+that on rare occasions, a slow wake-up could cross 60 seconds and cause
+Telegram to redeliver the same update. `bot.py` doesn't currently
+deduplicate by `update_id`, so a redelivered update would be processed
+twice (e.g. a search running twice). For a personal low-traffic bot this
+is a minor, rare inconvenience rather than a real problem — worth adding
+`update_id` deduplication only if it actually starts happening in
+practice.
+
 
 ## 6. Common deploy errors and fixes
 
@@ -163,9 +197,17 @@ entirely, which is why it's the default recommendation here.
 - **Service builds and starts but never indexes anything:** the bot
   almost certainly isn't an admin in the channel — this is the single
   most common cause. Double-check, then check `CHANNEL_ID` matches if set.
-- **Bot doesn't reply in DM at all:** confirm `BOT_TOKEN` is correct in
-  Render's Environment tab (not just locally) and you're messaging the
-  right bot username.
+- **Webhook mode: logs show binding to the wrong port, or Render can't
+  detect an open port:** `bot.py` reads Render's `PORT` env var
+  automatically — don't set `PORT` manually unless you have a specific
+  reason to. Render's Web Services default to port `10000` and expect
+  your app to bind there; the code already does this correctly via
+  `int(os.environ.get("PORT", "8080"))`.
+- **Webhook mode: bot deploys, logs show `Registering webhook URL:
+  https://None/...` or similar:** `WEBHOOK_URL` isn't set, or is set to
+  an empty string. Add it in Render's Environment tab with your service's
+  full `https://your-app.onrender.com` URL.
+
 - **Deploy succeeds, no crash, but nothing happens at all:** check the
   Render **Logs** tab for `Starting in polling mode` — if that line never
   appears, the process may be crashing on an unset required env var

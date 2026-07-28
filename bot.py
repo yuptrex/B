@@ -131,7 +131,10 @@ def list_recent(limit: int = 10):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def is_authorized(update: Update) -> bool:
+def is_owner(update: Update) -> bool:
+    """True only for OWNER_ID. Used to gate management actions (browse,
+    recent, stats, rename, delete) that should never be public, even when
+    search is open to everyone."""
     if not OWNER_ID:
         return True
     user = update.effective_user
@@ -282,8 +285,8 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_authorized(update):
-        await update.message.reply_text("You're not authorized to use this bot.")
+    if not is_owner(update):
+        await update.message.reply_text("This command is only available to the bot owner.")
         return
     count = files_col.count_documents({})
     by_type = files_col.aggregate([{"$group": {"_id": "$file_type", "n": {"$sum": 1}}}])
@@ -295,8 +298,8 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_authorized(update):
-        await update.message.reply_text("You're not authorized to use this bot.")
+    if not is_owner(update):
+        await update.message.reply_text("This command is only available to the bot owner.")
         return
     rows = [
         [InlineKeyboardButton("📄 Documents", callback_data="browsetype:document")],
@@ -310,8 +313,8 @@ async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_authorized(update):
-        await update.message.reply_text("You're not authorized to use this bot.")
+    if not is_owner(update):
+        await update.message.reply_text("This command is only available to the bot owner.")
         return
     docs = list_recent(10)
     if not docs:
@@ -330,10 +333,9 @@ async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Search (plain text in DM)
 # ---------------------------------------------------------------------------
 async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_authorized(update):
-        await update.message.reply_text("You're not authorized to use this bot.")
-        return
-
+    # Intentionally open to every Telegram user: searching and receiving
+    # files is the bot's public-facing feature. Management actions
+    # (rename/delete/browse/recent/stats) remain owner-only via is_owner().
     query = update.message.text
     results = search_files(query)
 
@@ -359,9 +361,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     chat_id = update.effective_chat.id
 
-    if not is_authorized(update):
-        await query.answer("Not authorized.", show_alert=True)
-        return
+    # No blanket auth gate here: viewing search results, paging, and
+    # sending a file are public actions any user should be able to tap on
+    # their own search. Delete and rename are checked individually below,
+    # since those must stay owner-only even when search is public.
 
     if data == "noop":
         await query.answer()
@@ -439,8 +442,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await _send_stored_file(context, chat_id, doc)
         return
 
-    # --- Delete ---
+    # --- Delete (owner-only) ---
     if data.startswith("delete:"):
+        if not is_owner(update):
+            await query.answer("Only the bot owner can delete files.", show_alert=True)
+            return
         doc_id = data.split(":", 1)[1]
         doc = _find_by_id(doc_id)
         if doc is None:
@@ -451,8 +457,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"🗑 Deleted: {display_label(doc)}")
         return
 
-    # --- Rename: ask for new name via a follow-up text message ---
+    # --- Rename: ask for new name via a follow-up text message (owner-only) ---
     if data.startswith("rename:"):
+        if not is_owner(update):
+            await query.answer("Only the bot owner can rename files.", show_alert=True)
+            return
         doc_id = data.split(":", 1)[1]
         doc = _find_by_id(doc_id)
         if doc is None:
@@ -514,6 +523,10 @@ async def _send_stored_file(context, chat_id, doc):
 # Plain text router: rename reply vs. search query
 # ---------------------------------------------------------------------------
 async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # No owner check needed here: user_data is per-user, and
+    # "awaiting_rename_for" is only ever set inside the owner-gated
+    # rename: callback branch above. A non-owner's user_data can never
+    # contain this key, so this path is unreachable for them.
     pending_doc_id = context.user_data.get("awaiting_rename_for")
     if pending_doc_id:
         new_name = update.message.text.strip()
@@ -553,12 +566,17 @@ def main():
     application = build_app()
 
     if WEBHOOK_URL:
+        webhook_base = WEBHOOK_URL.rstrip("/")
+        if not webhook_base.startswith(("http://", "https://")):
+            webhook_base = f"https://{webhook_base}"
+        full_webhook_url = f"{webhook_base}/{BOT_TOKEN}"
         logger.info("Starting in webhook mode on port %s", PORT)
+        logger.info("Registering webhook URL: %s", full_webhook_url)
         application.run_webhook(
             listen="0.0.0.0",
             port=PORT,
             url_path=BOT_TOKEN,
-            webhook_url=f"{WEBHOOK_URL.rstrip('/')}/{BOT_TOKEN}",
+            webhook_url=full_webhook_url,
             allowed_updates=Update.ALL_TYPES,
         )
     else:
