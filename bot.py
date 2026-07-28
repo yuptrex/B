@@ -288,8 +288,15 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
-    count = files_col.count_documents({})
-    by_type = files_col.aggregate([{"$group": {"_id": "$file_type", "n": {"$sum": 1}}}])
+    try:
+        count = files_col.count_documents({})
+        by_type = list(files_col.aggregate([{"$group": {"_id": "$file_type", "n": {"$sum": 1}}}]))
+    except PyMongoError:
+        logger.exception("stats_cmd: MongoDB query failed")
+        await update.message.reply_text(
+            "⚠️ Couldn't reach the database just now — try /stats again in a moment."
+        )
+        return
     lines = [f"*Total indexed:* {count}"]
     for row in by_type:
         icon = TYPE_ICONS.get(row["_id"], "📎")
@@ -543,6 +550,24 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 # ---------------------------------------------------------------------------
+# Global error handler
+# ---------------------------------------------------------------------------
+async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
+    """Catches any exception not already handled inside a specific handler,
+    so failures show up in the logs (and, where possible, to the owner)
+    instead of vanishing silently — e.g. a transient Mongo timeout that
+    previously made a command just... not reply."""
+    logger.exception("Unhandled exception while processing update: %s", update, exc_info=context.error)
+    if OWNER_ID and isinstance(update, Update) and update.effective_chat:
+        try:
+            await context.bot.send_message(
+                OWNER_ID, f"⚠️ Bot hit an error: {context.error!r}"
+            )
+        except Exception:
+            pass  # never let error reporting itself crash the handler
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 def build_app() -> Application:
@@ -558,6 +583,7 @@ def build_app() -> Application:
     application.add_handler(
         MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_private_text)
     )
+    application.add_error_handler(on_error)
 
     return application
 
