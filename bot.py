@@ -31,6 +31,9 @@ from dotenv import load_dotenv
 from pymongo import MongoClient, ASCENDING, TEXT
 from pymongo.errors import PyMongoError
 from telegram import (
+    BotCommand,
+    BotCommandScopeChat,
+    BotCommandScopeDefault,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Update,
@@ -443,21 +446,26 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
-START_TEXT = (
-    "👋 *File Search Bot*\n\n"
-    "Send me part of a file name and I'll search the channel's indexed "
-    "files.\n\n"
-    "Commands:\n"
-    "• /browse — browse files by type\n"
-    "• /recent — last 10 uploads\n"
-    "• /stats — indexed file count"
-)
+def build_start_text(admin: bool) -> str:
+    text = (
+        "👋 *File Search Bot*\n\n"
+        "*Send me the file name to search.*"
+    )
+    if admin:
+        text += (
+            "\n\nCommands:\n"
+            "• /browse — browse files by type\n"
+            "• /recent — last 10 uploads\n"
+            "• /stats — indexed file count\n"
+            "• /update — change the join-gate channel"
+        )
+    return text
 
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await require_membership(update, context):
         return
-    await update.message.reply_text(START_TEXT, parse_mode="Markdown")
+    await update.message.reply_text(build_start_text(is_owner(update)), parse_mode="Markdown")
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -569,7 +577,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = update.effective_user
         if user is not None and await is_channel_member(context, user.id):
             await query.answer("✅ Joined! Let's go.", show_alert=True)
-            await query.edit_message_text("✅ *You're in!*\n\n" + START_TEXT, parse_mode="Markdown")
+            await query.edit_message_text(
+                "✅ *You're in!*\n\n" + build_start_text(is_owner(update)), parse_mode="Markdown"
+            )
         else:
             await query.answer(
                 "You haven't joined the channel yet — tap Join Channel, then tap Start again.",
@@ -981,8 +991,38 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Command menu: hidden by default, visible only to the bot owner
+# ---------------------------------------------------------------------------
+ADMIN_COMMANDS = [
+    BotCommand("start", "Start the bot"),
+    BotCommand("browse", "Browse files by type"),
+    BotCommand("recent", "Last 10 uploads"),
+    BotCommand("stats", "Indexed file count"),
+    BotCommand("update", "Change the join-gate channel"),
+]
+
+
+async def _setup_command_menus(application: Application):
+    """Everyone else's '/' menu stays empty (they can still type a command
+    by hand — this only controls what Telegram's autocomplete shows)."""
+    try:
+        await application.bot.set_my_commands([], scope=BotCommandScopeDefault())
+    except Exception:
+        logger.exception("Failed to clear the default command menu")
+
+    if not OWNER_ID:
+        return
+    try:
+        await application.bot.set_my_commands(
+            ADMIN_COMMANDS, scope=BotCommandScopeChat(chat_id=int(OWNER_ID))
+        )
+    except Exception:
+        logger.exception("Failed to set the admin-only command menu for OWNER_ID=%s", OWNER_ID)
+
+
 def build_app() -> Application:
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application = ApplicationBuilder().token(BOT_TOKEN).post_init(_setup_command_menus).build()
 
     application.add_handler(CommandHandler("start", start_cmd))
     application.add_handler(CommandHandler("stats", stats_cmd))
