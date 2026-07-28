@@ -23,5 +23,3 @@ services:
         sync: false
       - key: PORT
         value: 8080
-      - key: INGEST_SECRET
-        sync: false

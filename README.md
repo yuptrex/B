@@ -215,67 +215,17 @@ practice.
   missing — check Render's Environment tab for typos in the variable
   names).
 
-## 7. Files uploaded by another bot/webapp (the `/ingest` endpoint)
+## 7. How it works
 
-**Platform limitation:** Telegram never delivers a bot an update
-(`channel_post` or otherwise) for a message that bot itself just sent —
-this is true no matter the chat type, and true even if the uploader and
-this indexer share the same bot token. So `index_channel_post` can only
-ever see files posted by an actual human (admin) or a genuinely separate
-bot account acting on its own — it will **never** see this bot's own
-`sendDocument`/`sendPhoto` calls, or another tool's calls using the same
-token.
-
-If you have a separate tool (a webapp, a script, another bot) uploading
-files to the channel via the Bot API directly, have it call this bot's
-`POST /ingest` right after each successful upload:
-
-```
-POST https://<this-bot's-deployed-url>/ingest
-Headers:  X-Ingest-Secret: <your INGEST_SECRET>
-Body (JSON):
-{
-  "file_id": "...",          // from the sendDocument/sendPhoto response
-  "file_unique_id": "...",
-  "name": "40309.jpeg",      // optional but recommended
-  "caption": "40309.jpeg",   // optional but recommended
-  "file_type": "document",   // document | video | photo | audio | voice | video_note
-  "file_size": 123456        // optional
-}
-```
-
-- Set `INGEST_SECRET` in this bot's env to a fixed value (e.g.
-  `openssl rand -hex 24`) and use the exact same value in the uploader's
-  request header. If `INGEST_SECRET` is left unset, a random one is
-  generated every restart and logged once — fine for a quick test, but it
-  will silently break ingestion on every redeploy since the uploader's
-  copy goes stale.
-- In **webhook mode**, `/ingest` is served on the same `$PORT` as the
-  Telegram webhook itself (most single-port hosts, including a Render Web
-  Service, only expose one public port).
-- In **polling mode**, `/ingest` runs on its own port (`INGEST_PORT`,
-  default `8090`) since there's no webhook server to share.
-- `GET /ingest/health` returns `{"ok": true}` if the endpoint is reachable
-  — useful for a quick curl check before wiring up the real uploader.
-
-## 9. How it works
-
-- `index_channel_post` — fires on every post in a channel or linked group
-  the bot admins (registered via `MessageHandler((filters.ChatType.CHANNEL
-  | filters.ChatType.GROUPS), ...)`, and `allowed_updates=Update.ALL_TYPES`
-  on both polling and webhook startup ensures Telegram actually delivers
-  channel posts to the bot — omitting this is a common reason bots
-  silently never receive them). Detects file type, pulls the Telegram
-  `file_id` (used to resend) and `file_unique_id` (dedupe key), and
-  upserts into the `files` collection. See section 8 above for the one
-  case this handler structurally can't cover.
-- `handle_ingest` — the `/ingest` HTTP route described in section 8;
-  calls the same `save_file_record` as `index_channel_post`, so both
-  paths land in the same collection and are equally searchable.
+- `index_channel_post` — fires on every post in a channel the bot admins
+  (registered via `MessageHandler(filters.ChatType.CHANNEL, ...)`, and
+  `allowed_updates=Update.ALL_TYPES` on both polling and webhook startup
+  ensures Telegram actually delivers channel posts to the bot — omitting
+  this is a common reason bots silently never receive them). Detects file
+  type, pulls the Telegram `file_id` (used to resend) and
+  `file_unique_id` (dedupe key), and upserts into the `files` collection.
 - `handle_search_text` — case-insensitive regex search against stored
-  `name`/`caption`, falling back to a `rapidfuzz` fuzzy pass over
-  everything else so near-misspellings still surface. Returns results as
-  inline buttons.
+  `name`/`caption`, returns results as inline buttons.
 - `handle_callback` — routes every button tap: viewing a preview card,
   paging through results, sending a file, renaming, deleting, or
   browsing/going back.
@@ -287,7 +237,7 @@ Body (JSON):
   fine for single-owner use; a multi-instance or high-traffic deployment
   would want this in Mongo/Redis instead.
 
-## 10. Known limitations
+## 8. Known limitations
 
 - Voice notes and video notes have no filename and Telegram doesn't allow
   captions on them either, so they're only findable if you search by
