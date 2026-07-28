@@ -268,7 +268,7 @@ async def get_channel_join_link(context: ContextTypes.DEFAULT_TYPE):
 
 def build_join_gate_keyboard(join_link):
     rows = [[InlineKeyboardButton("📢 Join Channel", url=join_link)]]
-    rows.append([InlineKeyboardButton("✅ I've joined", callback_data="checkjoin")])
+    rows.append([InlineKeyboardButton("🚀 Start", callback_data="checkjoin")])
     return InlineKeyboardMarkup(rows)
 
 
@@ -276,7 +276,7 @@ async def send_join_gate(context: ContextTypes.DEFAULT_TYPE, chat_id):
     join_link = await get_channel_join_link(context)
     text = (
         "🔒 *Join our channel to use this bot.*\n\n"
-        "Tap *Join Channel* below, then tap *I've joined* to continue."
+        "Tap *Join Channel* below, join, then tap *Start* to continue."
     )
     keyboard = build_join_gate_keyboard(join_link) if join_link else None
     if not join_link:
@@ -289,7 +289,10 @@ async def send_join_gate(context: ContextTypes.DEFAULT_TYPE, chat_id):
 
 async def require_membership(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Call at the top of any handler that should be gated. Sends the join
-    prompt and returns False if the user isn't a member yet."""
+    prompt and returns False if the user isn't a member yet. The bot owner
+    is always exempt — never gated, never shown the join prompt."""
+    if is_owner(update):
+        return True
     user = update.effective_user
     if user is not None and await is_channel_member(context, user.id):
         return True
@@ -565,11 +568,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "checkjoin":
         user = update.effective_user
         if user is not None and await is_channel_member(context, user.id):
-            await query.answer("✅ Joined!")
+            await query.answer("✅ Joined! Let's go.", show_alert=True)
             await query.edit_message_text("✅ *You're in!*\n\n" + START_TEXT, parse_mode="Markdown")
         else:
             await query.answer(
-                "You haven't joined yet — tap Join Channel, then try again.", show_alert=True
+                "You haven't joined the channel yet — tap Join Channel, then tap Start again.",
+                show_alert=True,
             )
         return
 
