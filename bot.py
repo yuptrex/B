@@ -252,20 +252,18 @@ def build_preview_keyboard(doc_id, back_tag):
 
 def format_preview_text(doc) -> str:
     icon = TYPE_ICONS.get(doc["file_type"], "📎")
-    label = display_label(doc)
     size = human_size(doc.get("file_size"))
     saved_at = doc.get("saved_at")
     date_str = saved_at.strftime("%Y-%m-%d %H:%M UTC") if saved_at else "unknown date"
-    caption = doc.get("caption") or "—"
     lock_line = "\n🔒 *Password required to send*" if doc.get("pw_hash") else ""
 
     return (
-        f"{icon} *{escape_md(label)}*\n\n"
+        f"{icon} *File details*\n\n"
         f"*Type:* {doc['file_type'].replace('_', ' ').title()}\n"
         f"*Size:* {size}\n"
-        f"*Added:* {date_str}\n"
-        f"*Caption:* {escape_md(caption)}"
-        f"{lock_line}"
+        f"*Added:* {date_str}"
+        f"{lock_line}\n\n"
+        f"_powered by @z5met_"
     )
 
 
