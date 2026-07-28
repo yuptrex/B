@@ -225,7 +225,7 @@ def build_results_keyboard(docs, page: int, context_tag: str):
         if len(label) > 40:
             label = label[:37] + "..."
         rows.append([
-            InlineKeyboardButton(f"{icon} {label}", callback_data=f"view:{doc['_id']}")
+            InlineKeyboardButton(f"{icon} {label}", callback_data=f"view:{context_tag}:{page}:{doc['_id']}")
         ])
 
     nav_row = []
@@ -241,7 +241,7 @@ def build_results_keyboard(docs, page: int, context_tag: str):
     return InlineKeyboardMarkup(rows)
 
 
-def build_preview_keyboard(doc_id, back_tag):
+def build_preview_keyboard(doc_id, back_tag, back_page=0):
     rows = [[InlineKeyboardButton("📤 Send file", callback_data=f"send:{doc_id}")]]
     owner_row = [
         InlineKeyboardButton("✏️ Rename", callback_data=f"rename:{doc_id}"),
@@ -249,7 +249,7 @@ def build_preview_keyboard(doc_id, back_tag):
     ]
     rows.append(owner_row)
     if back_tag:
-        rows.append([InlineKeyboardButton("🔙 Back to results", callback_data=f"back:{back_tag}")])
+        rows.append([InlineKeyboardButton("🔙 Back to results", callback_data=f"back:{back_tag}:{back_page}")])
     return InlineKeyboardMarkup(rows)
 
 
@@ -281,6 +281,19 @@ def escape_md(text: str) -> str:
 # doesn't need to re-run the query. Fine for a single-owner bot; for multi-user
 # heavy use you'd move this into Mongo or Redis.
 _list_cache = {}
+
+# Pending "request from admin" taps: request_id -> {chat_id, query, requested_by}.
+# Keyed by a short random id (rather than the query itself) so callback_data
+# stays well under Telegram's 64-byte limit regardless of query length.
+_pending_requests = {}
+
+
+def _requester_label(user) -> str:
+    if user is None:
+        return "someone"
+    if user.username:
+        return f"@{user.username}"
+    return user.full_name or "someone"
 
 
 # ---------------------------------------------------------------------------
@@ -404,7 +417,21 @@ async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
     results = search_files(query)
 
     if not results:
-        await update.message.reply_text(f"🔍 No files found matching \"{query}\".")
+        keyboard = None
+        if CHANNEL_ID:
+            request_id = secrets.token_hex(4)
+            _pending_requests[request_id] = {
+                "chat_id": update.effective_chat.id,
+                "query": query,
+                "requested_by": update.effective_user,
+            }
+            keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("📨 Request from admin", callback_data=f"reqadmin:{request_id}")]]
+            )
+        await update.message.reply_text(
+            f"🔍 No files found matching \"{query}\".",
+            reply_markup=keyboard,
+        )
         return
 
     tag = f"search:{update.effective_chat.id}:{abs(hash(query)) % 100000}"
@@ -432,6 +459,37 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "noop":
         await query.answer()
+        return
+
+    # --- Request from admin: post the missed search to the channel ---
+    if data.startswith("reqadmin:"):
+        request_id = data.split(":", 1)[1]
+        req = _pending_requests.get(request_id)
+        await query.answer()
+        if req is None:
+            await query.edit_message_reply_markup(reply_markup=None)
+            await context.bot.send_message(chat_id, "This request has expired — please search again.")
+            return
+        if not CHANNEL_ID:
+            await context.bot.send_message(chat_id, "⚠️ No channel is configured to send requests to.")
+            return
+        requester_label = _requester_label(req.get("requested_by"))
+        try:
+            await context.bot.send_message(
+                CHANNEL_ID,
+                f"📨 *File request*\n\n"
+                f"*Requested by:* {escape_md(requester_label)}\n"
+                f"*Looking for:* *{escape_md(req['query'])}*",
+                parse_mode="Markdown",
+            )
+        except Exception:
+            logger.exception("Failed to post file request to channel")
+            await context.bot.send_message(chat_id, "⚠️ Couldn't send the request — try again later.")
+            return
+        _pending_requests.pop(request_id, None)
+        await query.edit_message_text(
+            f"🔍 No files found matching \"{req['query']}\".\n\n✅ Request sent to the admin."
+        )
         return
 
     # --- Browse: pick a type ---
@@ -471,7 +529,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- Back to a cached list ---
     if data.startswith("back:"):
-        tag = data.split(":", 1)[1]
+        # tag itself may contain colons (search:<chat_id>:<hash>, etc.), so
+        # split off the trailing page number from the right, same as "page:".
+        rest = data[len("back:"):]
+        tag, page_str = rest.rsplit(":", 1)
+        page = int(page_str)
         docs = _list_cache.get((chat_id, tag))
         await query.answer()
         if docs is None:
@@ -480,23 +542,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             f"🔍 *Results* ({len(docs)})",
             parse_mode="Markdown",
-            reply_markup=build_results_keyboard(docs, 0, tag),
+            reply_markup=build_results_keyboard(docs, page, tag),
         )
         return
 
     # --- View a specific file's preview card ---
     if data.startswith("view:"):
-        doc_id = data.split(":", 1)[1]
+        # callback_data is "view:<tag>:<page>:<doc_id>" — tag may itself
+        # contain colons, so peel the doc_id and page off the right end.
+        rest = data[len("view:"):]
+        tag, page_str, doc_id = rest.rsplit(":", 2)
+        page = int(page_str)
         doc = _find_by_id(doc_id)
         await query.answer()
         if doc is None:
             await query.edit_message_text("File not found (it may have been deleted).")
             return
-        back_tag = _guess_back_tag(chat_id, doc_id)
         await query.edit_message_text(
             format_preview_text(doc),
             parse_mode="Markdown",
-            reply_markup=build_preview_keyboard(doc_id, back_tag),
+            reply_markup=build_preview_keyboard(doc_id, tag, page),
         )
         return
 
@@ -564,17 +629,6 @@ def _find_by_id(doc_id: str):
         return files_col.find_one({"_id": ObjectId(doc_id)})
     except InvalidId:
         return None
-
-
-def _guess_back_tag(chat_id, doc_id):
-    """Find a cached list tag for this chat that contains doc_id, so the
-    preview card's Back button returns to the right list."""
-    for (cid, tag), docs in _list_cache.items():
-        if cid != chat_id:
-            continue
-        if any(str(d["_id"]) == doc_id for d in docs):
-            return tag
-    return None
 
 
 async def _auto_delete_job(context: ContextTypes.DEFAULT_TYPE):
