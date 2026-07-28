@@ -16,16 +16,20 @@ Run modes:
 - Webhook: good for a Render "Web Service" (set WEBHOOK_URL env var).
 """
 
+import asyncio
 import logging
 import math
 import os
+import secrets
 from datetime import datetime, timezone
 
+from aiohttp import web
 from bson import ObjectId
 from bson.errors import InvalidId
 from dotenv import load_dotenv
 from pymongo import MongoClient, ASCENDING, TEXT
 from pymongo.errors import PyMongoError
+from rapidfuzz import fuzz, process as fuzz_process
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -53,6 +57,18 @@ CHANNEL_ID = os.environ.get("CHANNEL_ID")  # optional: restrict indexing to this
 OWNER_ID = os.environ.get("OWNER_ID")  # optional: restrict who can search/receive/manage files
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 PORT = int(os.environ.get("PORT", "8080"))
+
+# Shared secret the webapp (or any other uploader) must send in the
+# X-Ingest-Secret header when calling POST /ingest below. This lets files
+# uploaded straight through the Bot API by another tool get indexed even
+# though Telegram never delivers a bot its own outgoing messages as an
+# update (a bot never receives an update for a message it itself sent —
+# this is a hard platform limitation, not something fixable via filters or
+# allowed_updates). If unset, a random one is generated at startup and
+# logged once so you can copy it into the uploader's config; set it
+# explicitly via env var instead so it's stable across restarts/deploys.
+INGEST_SECRET = os.environ.get("INGEST_SECRET") or secrets.token_urlsafe(24)
+INGEST_PORT = int(os.environ.get("INGEST_PORT", "8090"))
 
 PAGE_SIZE = 8  # results per page in lists
 
@@ -107,17 +123,108 @@ def save_file_record(*, file_id, file_unique_id, name, caption, file_type,
         logger.exception("Failed to save file record to MongoDB")
 
 
+# ---------------------------------------------------------------------------
+# Ingest endpoint: for files uploaded to the channel by another tool using
+# the Bot API directly (e.g. a webapp calling sendDocument/sendPhoto).
+#
+# Why this exists: Telegram never delivers a bot an update (channel_post or
+# otherwise) for a message that bot itself just sent — this is a documented
+# platform limitation, true regardless of chat type, and true even when the
+# uploader and this indexer share the same bot token. So index_channel_post
+# above can only ever see files posted by a human/admin (or a genuinely
+# different bot account acting independently); it will never see this bot's
+# own sendDocument/sendPhoto calls. The uploader has all the data already
+# (file_id, file_unique_id, name, etc. are in the sendDocument/sendPhoto
+# response) — this endpoint just lets it hand that off to be indexed, without
+# needing direct database access (which would mean exposing the Mongo URI in
+# client-side code).
+# ---------------------------------------------------------------------------
+async def handle_ingest(request: web.Request) -> web.Response:
+    if request.headers.get("X-Ingest-Secret") != INGEST_SECRET:
+        return web.json_response({"ok": False, "error": "unauthorized"}, status=401)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "invalid JSON body"}, status=400)
+
+    required = ("file_id", "file_unique_id", "file_type")
+    missing = [k for k in required if not payload.get(k)]
+    if missing:
+        return web.json_response(
+            {"ok": False, "error": f"missing required field(s): {', '.join(missing)}"},
+            status=400,
+        )
+
+    if payload["file_type"] not in TYPE_ICONS:
+        return web.json_response(
+            {"ok": False, "error": f"unknown file_type: {payload['file_type']!r}"},
+            status=400,
+        )
+
+    save_file_record(
+        file_id=payload["file_id"],
+        file_unique_id=payload["file_unique_id"],
+        name=payload.get("name"),
+        caption=payload.get("caption"),
+        file_type=payload["file_type"],
+        chat_id=payload.get("chat_id"),
+        message_id=payload.get("message_id"),
+        file_size=payload.get("file_size"),
+    )
+    return web.json_response({"ok": True})
+
+
+async def handle_ingest_health(_request: web.Request) -> web.Response:
+    return web.json_response({"ok": True, "service": "tg-file-bot ingest"})
+
+
+def build_ingest_app() -> web.Application:
+    app = web.Application()
+    app.router.add_post("/ingest", handle_ingest)
+    app.router.add_get("/ingest/health", handle_ingest_health)
+    return app
+
+
+FUZZY_SCORE_CUTOFF = 60  # 0-100; lower = more forgiving of typos/near-spellings
+
+
 def search_files(query: str):
+    """Match files whose name/caption contain the query as a substring
+    (fast path, handles the common case) OR whose name/caption are a close
+    fuzzy match to the query (catches typos / "almost matches spelling"),
+    regardless of who uploaded the file — indexing doesn't distinguish
+    uploader, so every indexed file is eligible.
+    """
     query = query.strip()
     if not query:
         return []
+
     regex_filter = {
         "$or": [
             {"name": {"$regex": query, "$options": "i"}},
             {"caption": {"$regex": query, "$options": "i"}},
         ]
     }
-    return list(files_col.find(regex_filter).sort("saved_at", -1))
+    substring_matches = list(files_col.find(regex_filter))
+    matched_ids = {doc["_id"] for doc in substring_matches}
+
+    # Fuzzy pass over everything else, so near-misspellings still surface.
+    remaining = list(files_col.find({"_id": {"$nin": list(matched_ids)}} if matched_ids else {}))
+    fuzzy_matches = []
+    for doc in remaining:
+        label = f"{doc.get('name', '')} {doc.get('caption', '')}".strip()
+        if not label:
+            continue
+        score = fuzz.partial_ratio(query.lower(), label.lower())
+        if score >= FUZZY_SCORE_CUTOFF:
+            fuzzy_matches.append((score, doc))
+    fuzzy_matches.sort(key=lambda pair: pair[0], reverse=True)
+
+    # Substring hits first (most confident), then fuzzy hits ordered by
+    # closeness of match, each group already internally sorted.
+    substring_matches.sort(key=lambda d: d.get("saved_at"), reverse=True)
+    return substring_matches + [doc for _, doc in fuzzy_matches]
 
 
 def list_by_type(file_type: str):
@@ -230,10 +337,28 @@ _list_cache = {}
 # Handlers: indexing channel posts
 # ---------------------------------------------------------------------------
 async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.channel_post
+    # NOTE: This handler indexes a file no matter who put it there — the
+    # channel's own identity, a named admin, a regular member posting into a
+    # linked discussion group, or another bot. Telegram channel posts do not
+    # carry a distinguishable "uploader" the way group messages do (they show
+    # as the channel/author signature), so there was never any per-user check
+    # here to remove. What *can* silently hide files is (a) a stale/incorrect
+    # CHANNEL_ID env var making the chat-id check reject everything except
+    # whatever chat you tested with, or (b) files landing in a linked
+    # discussion group as ordinary group messages rather than channel_post
+    # updates. Both are handled below, with logging instead of silent drops
+    # so a misconfiguration is visible instead of looking like "only some
+    # people's uploads are indexed."
+    msg = update.channel_post or update.message
     if msg is None:
         return
+
     if CHANNEL_ID and str(msg.chat.id) != str(CHANNEL_ID):
+        logger.info(
+            "Ignoring post from chat %s (%s) because CHANNEL_ID is set to %s. "
+            "If this chat should be indexed, update CHANNEL_ID or unset it.",
+            msg.chat.id, msg.chat.title or msg.chat.type, CHANNEL_ID,
+        )
         return
 
     file_obj = None
@@ -254,6 +379,10 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
         file_obj, file_type, name = msg.photo[-1], "photo", None
 
     if file_obj is None:
+        logger.info(
+            "Post %s in chat %s had no recognized file attachment; skipping.",
+            msg.message_id, msg.chat.id,
+        )
         return
 
     save_file_record(
@@ -553,7 +682,18 @@ def build_app() -> Application:
     application.add_handler(CommandHandler("browse", browse_cmd))
     application.add_handler(CommandHandler("recent", recent_cmd))
 
-    application.add_handler(MessageHandler(filters.ChatType.CHANNEL, index_channel_post))
+    file_filter = (
+        filters.Document.ALL | filters.VIDEO | filters.PHOTO
+        | filters.AUDIO | filters.VOICE | filters.VIDEO_NOTE
+    )
+    # CHANNEL covers posts made directly in the channel (any admin, the
+    # channel's own identity, or another bot). GROUPS covers the case where
+    # the channel has a linked discussion group and a file is posted there
+    # by an ordinary member — those arrive as normal group messages, not
+    # channel_post updates, and were previously invisible to this bot.
+    application.add_handler(
+        MessageHandler((filters.ChatType.CHANNEL | filters.ChatType.GROUPS) & file_filter, index_channel_post)
+    )
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(
         MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_private_text)
@@ -562,14 +702,92 @@ def build_app() -> Application:
     return application
 
 
+def _run_standalone_ingest_server():
+    """For polling-mode deployments only (e.g. a Render Background Worker,
+    or local/dev): runs the /ingest HTTP server on its own port, in its own
+    thread with its own asyncio event loop, independent of run_polling() on
+    the main thread. Not used in webhook mode — there, /ingest is mounted on
+    the SAME aiohttp app and port as the Telegram webhook (see
+    run_webhook_with_ingest below), because a typical single-port host
+    (like a Render Web Service) only exposes one public port, so a second
+    port here would be unreachable from outside."""
+    import asyncio
+    import threading
+
+    def _runner():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async def _serve():
+            app = build_ingest_app()
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.TCPSite(runner, "0.0.0.0", INGEST_PORT)
+            await site.start()
+            logger.info(
+                "Ingest endpoint listening on 0.0.0.0:%s (POST /ingest) — "
+                "standalone port, since this is polling mode",
+                INGEST_PORT,
+            )
+            await asyncio.Event().wait()  # keep this loop alive forever
+
+        loop.run_until_complete(_serve())
+
+    thread = threading.Thread(target=_runner, name="ingest-server", daemon=True)
+    thread.start()
+
+
+async def _run_webhook_with_ingest(application: Application, full_webhook_url: str):
+    """Webhook mode: builds ONE aiohttp app that serves both the Telegram
+    webhook route and /ingest on the same port ($PORT). This is required
+    for single-port hosts like a Render Web Service, which only forwards
+    one public port — a second port for /ingest would be unreachable from
+    the public webapp calling it."""
+    async def telegram_webhook(request: web.Request) -> web.Response:
+        try:
+            data = await request.json()
+        except Exception:
+            return web.Response(status=400, text="invalid JSON")
+        update = Update.de_json(data, application.bot)
+        await application.update_queue.put(update)
+        return web.Response()
+
+    app = build_ingest_app()
+    app.router.add_post(f"/{BOT_TOKEN}", telegram_webhook)
+
+    await application.initialize()
+    await application.bot.set_webhook(url=full_webhook_url, allowed_updates=Update.ALL_TYPES)
+    await application.start()
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+    logger.info("Webhook + ingest server listening on 0.0.0.0:%s", PORT)
+    logger.info("Telegram webhook path: /%s", BOT_TOKEN)
+    logger.info("Ingest path: /ingest (needs X-Ingest-Secret header)")
+
+    await asyncio.Event().wait()  # keep running until the process is killed
+
+
 def main():
+    if not os.environ.get("INGEST_SECRET"):
+        logger.warning(
+            "INGEST_SECRET not set — generated a random one for this process "
+            "(changes on every restart): %s . Set INGEST_SECRET in your env "
+            "to a fixed value and use the SAME value in the uploader's "
+            "X-Ingest-Secret header, or every restart will silently break "
+            "ingestion until you update the uploader too.",
+            INGEST_SECRET,
+        )
+
     application = build_app()
 
     # On Render (or any host with an expected HTTP port), you MUST run in
-    # webhook mode: run_webhook() binds $PORT immediately, which is what
-    # stops the platform from timing out the deploy. run_polling() never
-    # binds a port, so if this falls through to polling on a Web Service,
-    # Render waits for a port that never opens and kills the deploy.
+    # webhook mode: it binds $PORT immediately, which is what stops the
+    # platform from timing out the deploy. Polling never binds a port, so
+    # if this falls through to polling on a Web Service, Render waits for a
+    # port that never opens and kills the deploy.
     render_url = os.environ.get("RENDER_EXTERNAL_URL")  # auto-set by Render
     on_render = os.environ.get("RENDER") == "true"  # set on every Render service
     webhook_target = WEBHOOK_URL or render_url
@@ -590,16 +808,10 @@ def main():
         full_webhook_url = f"{webhook_base}/{BOT_TOKEN}"
         logger.info("Starting in webhook mode on port %s", PORT)
         logger.info("Registering webhook URL: %s", full_webhook_url)
-        application.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            url_path=BOT_TOKEN,
-            webhook_url=full_webhook_url,
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True,
-        )
+        asyncio.run(_run_webhook_with_ingest(application, full_webhook_url))
     else:
         logger.info("Starting in polling mode (no WEBHOOK_URL / RENDER_EXTERNAL_URL set)")
+        _run_standalone_ingest_server()
         application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 
