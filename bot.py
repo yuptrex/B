@@ -21,6 +21,7 @@ import hmac
 import logging
 import math
 import os
+import random
 import re
 import secrets
 from datetime import datetime, timezone
@@ -49,6 +50,21 @@ from telegram.ext import (
 )
 
 load_dotenv()
+
+# The full set of standard (non-custom) emoji Telegram allows for message
+# reactions via the Bot API's ReactionTypeEmoji. Bots can only use one of
+# these fixed emoji per reaction (custom emoji reactions require the emoji
+# to already be present on the message, or explicit admin permission).
+ALL_REACTION_EMOJIS = [
+    "👍", "👎", "❤️", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱",
+    "🤬", "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊️", "🤡",
+    "🥱", "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡",
+    "🍌", "🏆", "💔", "🤨", "😐", "🍓", "🍾", "💋", "🖕", "😈",
+    "😴", "😭", "🤓", "👻", "👨‍💻", "👀", "🎃", "🙈", "😇", "😨",
+    "🤝", "✍️", "🤗", "🫡", "🎅", "🎄", "☃️", "💅", "🤪", "🗿",
+    "🆒", "💘", "🙉", "🦄", "😘", "💊", "🙊", "😎", "👾", "🤷‍♂️",
+    "🤷", "🤷‍♀️", "😡",
+]
 
 # ---------------------------------------------------------------------------
 # Config
@@ -402,6 +418,23 @@ def _requester_label(user) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Reactions - big animated emoji burst on every user-originated message
+# ---------------------------------------------------------------------------
+async def react_random(message):
+    """Set a random big animated-burst reaction on a user's message.
+    is_big=True is what triggers Telegram's fullscreen burst animation on
+    the sender's screen (same as a long-press reaction in the app). The Bot
+    API only lets us pick the emoji; the animation itself is client-side."""
+    if message is None:
+        return
+    try:
+        emoji = random.choice(ALL_REACTION_EMOJIS)
+        await message.set_reaction(reaction=emoji, is_big=True)
+    except Exception:
+        logger.exception("Failed to set reaction on message %s", getattr(message, "message_id", "?"))
+
+
+# ---------------------------------------------------------------------------
 # Handlers: indexing channel posts
 # ---------------------------------------------------------------------------
 async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -463,12 +496,14 @@ def build_start_text(admin: bool) -> str:
 
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     if not await require_membership(update, context):
         return
     await update.message.reply_text(build_start_text(is_owner(update)), parse_mode="Markdown")
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -491,6 +526,7 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -508,6 +544,7 @@ async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -859,6 +896,8 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     # "awaiting_rename_for" / "awaiting_password_for" are only ever set
     # inside their respective callback branches above. A user's own
     # user_data can only ever contain keys their own button taps set.
+    await react_random(update.message)
+
     if not await require_membership(update, context):
         return
     chat_id = update.effective_chat.id
@@ -917,6 +956,7 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 # Owner command: change the join-gate channel without a redeploy
 # ---------------------------------------------------------------------------
 async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
