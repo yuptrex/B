@@ -1,14 +1,13 @@
 services:
-  - type: web
+  - type: worker
     name: tg-file-bot
     env: python
     plan: free
-    buildCommand: pip install --no-cache-dir -r requirements.txt
-    startCommand: python bot.py
-    healthCheckPath: /
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app/bot.py
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.7
+        value: 3.11.9
       - key: BOT_TOKEN
         sync: false
       - key: MONGO_URI
@@ -19,7 +18,3 @@ services:
         sync: false
       - key: OWNER_ID
         sync: false
-      - key: WEBHOOK_URL
-        sync: false
-      - key: PORT
-        value: 8080
