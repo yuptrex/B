@@ -1,22 +1,45 @@
 # Telegram File Indexer + Search Bot
 
 Auto-indexes every file posted in your Telegram channel into MongoDB.
-DM the bot part of a filename and it sends back any matches.
+DM the bot part of a filename and get back a tappable button list of
+matches → tap one for a preview card (type/size/date) → tap **Send file**
+to receive it. Also supports `/browse` (by file type) and `/recent`
+(last 10 uploads), with owner-only Rename/Delete buttons.
 
-**Important honesty note:** this code was written carefully against the
-documented `python-telegram-bot` v21 and `pymongo` APIs, but it has **not**
-been run end-to-end against live Telegram/MongoDB servers (no internet
-access in the environment that generated this bundle). Follow the
-verification checklist below step by step the first time you run it, and
-watch the logs — that's how you confirm it actually works in your setup.
+**Honesty note on testing:** this code was written and statically verified
+carefully — syntax-checked, every function call cross-referenced against
+its definition, and every Telegram/MongoDB API call cross-checked against
+current library documentation (python-telegram-bot v22.8, pymongo 4.17.0,
+both current as of writing this). But the sandbox that generated this
+bundle has no internet access, so it could **not** be run end-to-end
+against live Telegram/MongoDB servers. Follow the verification checklist
+below the first time you run it — that's the real test.
+
+## Project structure
+
+```
+.
+├── bot.py            ← the entire bot, at repo root (not in a subfolder)
+├── requirements.txt
+├── render.yaml        ← Render Blueprint (optional, see below)
+├── Procfile           ← alternative to render.yaml
+├── .python-version    ← pins Python 3.12 so Render doesn't drift versions
+├── .env.example
+└── .gitignore
+```
+
+Everything Render needs — `bot.py`, `requirements.txt`, `Procfile` /
+`render.yaml` — sits at the **root of the repo**, on your main branch.
+Render's defaults (`pip install -r requirements.txt`, `python bot.py`)
+work with this layout with no path overrides needed.
 
 ## 1. Requirements
 
-- Python 3.10+
+- Python 3.10+ (3.12 recommended — see `.python-version`)
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 - A MongoDB Atlas cluster + connection string
-- Your bot added to your channel **as an administrator** (it must be admin
-  to receive `channel_post` updates)
+- Your bot added to your channel **as an administrator** — bots do not
+  receive channel posts otherwise, regardless of any other setting
 
 ## 2. Local setup
 
@@ -34,112 +57,226 @@ Edit `.env`:
 - `CHANNEL_ID` (optional but recommended) — your channel's numeric id,
   looks like `-1001234567890`. See "Finding your channel ID" below.
 - `OWNER_ID` (optional but recommended) — your personal numeric Telegram
-  user id, so strangers can't search your files. Get it from
-  [@userinfobot](https://t.me/userinfobot).
-- Leave `WEBHOOK_URL` blank for now — polling is simplest to verify first.
+  user id, so strangers can't search, rename, or delete your files. Get it
+  from [@userinfobot](https://t.me/userinfobot).
+- Leave `WEBHOOK_URL` blank — polling is simplest and is what's
+  recommended for deployment (see §5).
 
 Run it:
 
 ```bash
-python app/bot.py
+python bot.py
 ```
 
-You should see log lines like:
-
-```
-... - tgfilebot - INFO - Starting in polling mode
-```
+You should see: `... - tgfilebot - INFO - Starting in polling mode`
 
 ## 3. Verification checklist (do this in order)
 
 1. **Bot is admin in the channel.** Channel → Administrators → Add Admin →
-   your bot. Without this, Telegram never sends it channel posts.
-2. Post a file (any document/photo/video) to the channel.
-3. Check the terminal running the bot — you should see:
+   your bot.
+2. Post a file (document/photo/video/audio) to the channel.
+3. Check the terminal — you should see:
    `Saved file record: <filename> (document)`
-   If you don't see this line, the bot isn't receiving channel posts —
-   double check admin rights and `CHANNEL_ID` (or unset `CHANNEL_ID` while
-   testing to rule it out).
-4. Open a private chat with your bot, send `/start` — confirm it replies.
+   If not, the bot isn't receiving channel posts — recheck admin rights
+   and `CHANNEL_ID` (or unset `CHANNEL_ID` while testing to rule it out).
+4. DM your bot `/start` — confirm it replies.
 5. Send `/stats` — confirm it reports at least 1 indexed file.
 6. Send part of the filename you posted (e.g. `report` for
-   `Q3_report.pdf`) — confirm the bot sends the file back.
-7. Try a name that doesn't exist — confirm you get "No files found".
+   `Q3_report.pdf`) — confirm you get a button with that file's name.
+7. Tap the button — confirm you get a preview card with type/size/date
+   and a **Send file** button.
+8. Tap **Send file** — confirm you receive the actual file.
+9. Try `/browse` → pick a type → confirm the list appears.
+10. Try `/recent` → confirm your test upload appears.
+11. On a preview card, try **✏️ Rename**, send a new name, confirm it
+    updates. Try **🗑 Delete**, confirm it's removed and no longer found
+    by search.
 
-If every step above works, the bot is functioning correctly for your setup.
+If every step works, the bot is functioning correctly for your setup.
 
 ## 4. Finding your channel ID
 
-Easiest method: forward any message from the channel to
+Forward any message from the channel to
 [@userinfobot](https://t.me/userinfobot) or
-[@JsonDumpBot](https://t.me/JsonDumpBot) — it will show the channel's numeric
+[@JsonDumpBot](https://t.me/JsonDumpBot) — it shows the channel's numeric
 id (starts with `-100`).
 
 ## 5. Deploying to Render
 
-This bot uses **long polling**, so deploy it as a **Background Worker**
-(not a Web Service) — this is simpler and avoids webhook/SSL setup.
+This bot uses **long polling**, so deploy as a **Background Worker**, not
+a Web Service — simpler, no webhook/SSL/public-URL setup needed.
 
-1. Push this folder to a GitHub repo.
-2. On Render: New → Background Worker → connect the repo.
-3. Render will detect `render.yaml`. Alternatively set manually:
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `python app/bot.py`
-4. Add environment variables in the Render dashboard (Environment tab):
-   `BOT_TOKEN`, `MONGO_URI`, `MONGO_DB_NAME`, `CHANNEL_ID`, `OWNER_ID`.
-5. Deploy, then open the **Logs** tab and repeat the verification checklist
-   above using the live deployment.
+### Option A — Blueprint (`render.yaml`)
 
-### Optional: webhook mode instead
+1. Push this repo to GitHub with `bot.py` and the other files at the repo
+   root, on your main branch.
+2. On Render: **New → Blueprint** → connect the repo. Render reads
+   `render.yaml` automatically.
+3. Render will prompt for the `sync: false` variables (`BOT_TOKEN`,
+   `MONGO_URI`, `CHANNEL_ID`, `OWNER_ID`) — fill these in during setup.
+4. Deploy.
 
-If you'd rather run this as a Render **Web Service**, set `WEBHOOK_URL` to
-your Render service's public URL (e.g. `https://your-app.onrender.com`) and
-the bot will auto-register the webhook at startup. Free-tier Render web
-services sleep after inactivity, which can delay webhook delivery — a
-Background Worker with polling avoids that entirely.
+### Option B — Manual Background Worker
 
-## 6. File filtering (movies excluded, 20MB cap)
+1. On Render: **New → Background Worker** → connect the repo.
+2. Runtime: **Python 3**.
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `python bot.py`
+5. Environment tab → add `BOT_TOKEN`, `MONGO_URI`, `MONGO_DB_NAME`,
+   `CHANNEL_ID`, `OWNER_ID`.
+6. Deploy.
 
-To keep this as a small-file document/photo/audio indexer only:
+After deploying, open the **Logs** tab and repeat the verification
+checklist from §3 against the live deployment.
 
-- Any post typed as `video` or `video_note` by Telegram is **never** indexed,
-  regardless of size.
-- Any file (including documents) larger than `MAX_FILE_SIZE_MB` (default 20)
-  is skipped. If Telegram doesn't report a size for a file, it's skipped too
-  (better to skip than index something unverified).
-- Skipped posts are logged (`Skipped ...`) but otherwise ignored — nothing
-  is sent back to the channel.
-- This is filtering on Telegram's own type/size metadata, not on filename —
-  someone could still rename a movie file so it looks like a document and
-  post it under 20MB. This isn't a content-moderation system; if you need to
-  guarantee no copyrighted media gets shared, that requires human review of
-  what's posted to the source channel.
+### Webhook mode on a free Web Service (recommended for light/occasional use)
+
+If your bot only gets occasional traffic (a few messages a day), a
+**Web Service** running in webhook mode is the better fit — a free
+Background Worker's `getUpdates` polling loop runs nonstop even when
+nobody's using the bot, which burns free instance-hours for no benefit
+and can trigger Render's health-check `Timed Out` restarts (Render can't
+always tell "quietly polling" apart from "hung," since a worker exposes
+no HTTP port for Render to check). A Web Service has a real HTTP
+endpoint Render can health-check properly, and it fully spins down to
+zero cost when idle instead of polling in the background.
+
+1. On Render: **New → Web Service** → connect the repo.
+2. Runtime: **Python 3**. Instance type: **Free**.
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `python bot.py`
+5. Environment tab → add `BOT_TOKEN`, `MONGO_URI`, `MONGO_DB_NAME`,
+   `CHANNEL_ID`, `OWNER_ID`, same as the worker setup.
+6. Add one more variable: `WEBHOOK_URL` = your service's Render URL,
+   e.g. `https://your-app-name.onrender.com` (visible at the top of the
+   service page once created — you may need to deploy once first to see
+   it, then add this var and redeploy).
+7. Deploy. Check the **Logs** tab for `Starting in webhook mode on port
+   10000` followed by `Registering webhook URL: https://...` — this
+   confirms the bot registered the webhook with Telegram successfully.
+
+**What to expect:** the free instance spins down after 15 minutes with
+no incoming traffic. The next message after that triggers a cold start —
+about 50 seconds — before you get a reply; after that it's instant again
+for 15 minutes. This is a one-time delay per idle gap, not a failure —
+the message isn't lost, it's just waiting for the instance to wake up.
+
+**Known edge case worth knowing about, not acting on:** Telegram waits
+up to 60 seconds for your webhook to return `200 OK` before it retries
+delivery. Render's ~50 second cold start is close enough to that limit
+that on rare occasions, a slow wake-up could cross 60 seconds and cause
+Telegram to redeliver the same update. `bot.py` doesn't currently
+deduplicate by `update_id`, so a redelivered update would be processed
+twice (e.g. a search running twice). For a personal low-traffic bot this
+is a minor, rare inconvenience rather than a real problem — worth adding
+`update_id` deduplication only if it actually starts happening in
+practice.
+
+
+## 6. Common deploy errors and fixes
+
+- **`ModuleNotFoundError` on startup, or build succeeds but start fails
+  immediately:** almost always means the start command points at the
+  wrong path. This repo keeps `bot.py` at the root specifically so
+  `python bot.py` works with no path prefix — confirm your Render start
+  command matches exactly (`python bot.py`, not `python app/bot.py`).
+- **Build fails with "Could not find a version that satisfies the
+  requirement...":** a pinned version in `requirements.txt` no longer
+  exists on PyPI. The versions here were confirmed live on PyPI at the
+  time of writing (`python-telegram-bot==22.8`, `pymongo==4.17.0`,
+  `python-dotenv==1.2.2`) — if this changes in the future, run
+  `pip install --upgrade python-telegram-bot pymongo python-dotenv`
+  locally and update the pins.
+- **`pymongo.errors.ServerSelectionTimeoutError`:** your Atlas cluster is
+  rejecting Render's IP. Render's free-tier outbound IPs aren't static, so
+  either allow `0.0.0.0/0` in Atlas → Network Access (fine for testing;
+  MongoDB's own docs note this is not the most secure option for
+  production), or use Atlas's documented
+  [Render integration](https://www.mongodb.com/docs/atlas/reference/partner-integrations/render/)
+  to allowlist Render's specific static outbound IPs.
+- **Service builds and starts but never indexes anything:** the bot
+  almost certainly isn't an admin in the channel — this is the single
+  most common cause. Double-check, then check `CHANNEL_ID` matches if set.
+- **Webhook mode: logs show binding to the wrong port, or Render can't
+  detect an open port:** `bot.py` reads Render's `PORT` env var
+  automatically — don't set `PORT` manually unless you have a specific
+  reason to. Render's Web Services default to port `10000` and expect
+  your app to bind there; the code already does this correctly via
+  `int(os.environ.get("PORT", "8080"))`.
+- **Webhook mode: bot deploys, logs show `Registering webhook URL:
+  https://None/...` or similar:** `WEBHOOK_URL` isn't set, or is set to
+  an empty string. Add it in Render's Environment tab with your service's
+  full `https://your-app.onrender.com` URL.
+
+- **Deploy succeeds, no crash, but nothing happens at all:** check the
+  Render **Logs** tab for `Starting in polling mode` — if that line never
+  appears, the process may be crashing on an unset required env var
+  (`BOT_TOKEN` or `MONGO_URI` are required and will raise `KeyError` if
+  missing — check Render's Environment tab for typos in the variable
+  names).
 
 ## 7. How it works
 
-- `index_channel_post` — fires on every post in a channel the bot admins.
-  Detects file type (document/video/audio/voice/video_note/photo), pulls
-  the Telegram `file_id` (used to resend later) and `file_unique_id` (used
-  as a dedupe key), and upserts a record into the `files` collection.
-- `handle_search_text` — fires on any private text message to the bot.
-  Runs a case-insensitive regex search against stored `name` and `caption`
-  fields, and resends each match using its stored `file_id`.
-- `OWNER_ID`, if set, restricts search access to just you.
-- `CHANNEL_ID`, if set, restricts indexing to just that one channel (useful
-  if the bot is ever added to more than one).
+- `index_channel_post` — fires on every post in a channel the bot admins
+  (registered via `MessageHandler(filters.ChatType.CHANNEL, ...)`, and
+  `allowed_updates=Update.ALL_TYPES` on both polling and webhook startup
+  ensures Telegram actually delivers channel posts to the bot — omitting
+  this is a common reason bots silently never receive them). Detects file
+  type, pulls the Telegram `file_id` (used to resend) and
+  `file_unique_id` (dedupe key), and upserts into the `files` collection.
+- `handle_search_text` — case-insensitive regex search against stored
+  `name`/`caption`, returns results as inline buttons.
+- `handle_callback` — routes every button tap: viewing a preview card,
+  paging through results, sending a file, renaming, deleting, or
+  browsing/going back.
+- `OWNER_ID`, if set, restricts all bot interaction to just you.
+- `CHANNEL_ID`, if set, restricts indexing to just that channel.
+- An in-memory cache (`_list_cache`) backs pagination/back-navigation so
+  the bot doesn't re-run a MongoDB query on every button tap. This is
+  cleared on restart and isn't shared across multiple bot instances —
+  fine for single-owner use; a multi-instance or high-traffic deployment
+  would want this in Mongo/Redis instead.
 
-## 7. Troubleshooting
+## 8. Password-protected files
 
-- **Bot doesn't index anything:** it's very likely not an admin in the
-  channel, or `CHANNEL_ID` doesn't match. Channel posts are invisible to
-  non-admin bots.
-- **`pymongo.errors.ServerSelectionTimeoutError`:** check your Atlas
-  Network Access list allows connections from anywhere (`0.0.0.0/0`) if
-  deploying to Render, since Render's IPs aren't static on the free tier.
-- **Bot doesn't reply in DM at all:** confirm `BOT_TOKEN` is correct and
-  you're messaging the right bot username.
-- **No files found even though you posted one:** the file's `name`/`caption`
-  might not contain your search text — voice notes and video notes have no
-  filename, so they're only searchable by caption text (which Telegram
-  doesn't allow on those types) — consider replying to those with a text
-  caption workaround, or only test search against documents/videos first.
+Any file can be protected with a password, set at upload time:
+
+- **From the camera app:** type a password into the field above the
+  Send button before sending. Leave it blank for no password.
+- **Manual channel upload:** put `pass:yourpassword` anywhere in the
+  caption when you post the file (e.g. `family photo pass:1234`). The
+  bot strips the tag out — it never appears in search results or the
+  preview card's caption text.
+
+When a protected file's **Send file** button is tapped, the bot asks
+for the password in a follow-up DM before sending. Wrong passwords
+are rejected (5 attempts per file per chat, then you have to tap
+Send file again to retry). Passwords are stored as a salted SHA-256
+hash, never in plaintext — the owner can't look them up either, only
+verify a guess against the hash.
+
+Renaming a file does not change or clear its password.
+
+## 9. Known limitations
+
+- **A bot never receives its own messages.** If you have another app or
+  script post to the channel using this bot's own `BOT_TOKEN` (for
+  example, a web app that calls `sendDocument` directly), those messages
+  will show up in the channel but will **never** be indexed — Telegram
+  does not deliver `channel_post` updates for messages sent by the bot
+  itself, regardless of admin rights, `CHANNEL_ID`, or any other setting.
+  If you want another tool to auto-post into the same channel and have
+  it get indexed, give that tool its **own separate bot** (a different
+  token from BotFather), added as admin to the same channel. The
+  indexer bot will then see its posts as ordinary external messages.
+
+- Voice notes and video notes have no filename and Telegram doesn't allow
+  captions on them either, so they're only findable if you search by
+  something in a *different* file's caption that happens to match — in
+  practice, treat these two types as browse-only (`/browse`), not
+  search-friendly.
+- The rename flow uses a simple "waiting for your next message" state
+  stored in `context.user_data`. If you tap Rename and then send a
+  command instead of a name, that command will be swallowed as the new
+  filename. This is a deliberate simplicity trade-off, not a bug — worth
+  knowing about if renames start behaving oddly.
