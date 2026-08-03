@@ -21,9 +21,10 @@ import hmac
 import logging
 import math
 import os
-import random
 import re
 import secrets
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -50,21 +51,6 @@ from telegram.ext import (
 )
 
 load_dotenv()
-
-# The full set of standard (non-custom) emoji Telegram allows for message
-# reactions via the Bot API's ReactionTypeEmoji. Bots can only use one of
-# these fixed emoji per reaction (custom emoji reactions require the emoji
-# to already be present on the message, or explicit admin permission).
-ALL_REACTION_EMOJIS = [
-    "👍", "👎", "❤️", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱",
-    "🤬", "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊️", "🤡",
-    "🥱", "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡",
-    "🍌", "🏆", "💔", "🤨", "😐", "🍓", "🍾", "💋", "🖕", "😈",
-    "😴", "😭", "🤓", "👻", "👨‍💻", "👀", "🎃", "🙈", "😇", "😨",
-    "🤝", "✍️", "🤗", "🫡", "🎅", "🎄", "☃️", "💅", "🤪", "🗿",
-    "🆒", "💘", "🙉", "🦄", "😘", "💊", "🙊", "😎", "👾", "🤷‍♂️",
-    "🤷", "🤷‍♀️", "😡",
-]
 
 # ---------------------------------------------------------------------------
 # Config
@@ -118,6 +104,11 @@ def _load_join_channel_id() -> str:
         return str(doc["join_channel_id"])
     return DEFAULT_JOIN_CHANNEL_ID
 
+
+# Set inside main() once the webhook URL is resolved (Render's
+# RENDER_EXTERNAL_URL isn't known until runtime). Left as None in polling
+# mode, where self_ping() no-ops since there's nothing to ping.
+SELF_PING_URL = None
 
 # Mutable at runtime by the owner-only /update command — not a constant.
 _join_channel_id = _load_join_channel_id()
@@ -418,23 +409,6 @@ def _requester_label(user) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Reactions - big animated emoji burst on every user-originated message
-# ---------------------------------------------------------------------------
-async def react_random(message):
-    """Set a random big animated-burst reaction on a user's message.
-    is_big=True is what triggers Telegram's fullscreen burst animation on
-    the sender's screen (same as a long-press reaction in the app). The Bot
-    API only lets us pick the emoji; the animation itself is client-side."""
-    if message is None:
-        return
-    try:
-        emoji = random.choice(ALL_REACTION_EMOJIS)
-        await message.set_reaction(reaction=emoji, is_big=True)
-    except Exception:
-        logger.exception("Failed to set reaction on message %s", getattr(message, "message_id", "?"))
-
-
-# ---------------------------------------------------------------------------
 # Handlers: indexing channel posts
 # ---------------------------------------------------------------------------
 async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -496,14 +470,12 @@ def build_start_text(admin: bool) -> str:
 
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await react_random(update.message)
     if not await require_membership(update, context):
         return
     await update.message.reply_text(build_start_text(is_owner(update)), parse_mode="Markdown")
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -526,7 +498,6 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -544,7 +515,6 @@ async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await react_random(update.message)
     if not await require_membership(update, context):
         return
     if not is_owner(update):
@@ -896,8 +866,6 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     # "awaiting_rename_for" / "awaiting_password_for" are only ever set
     # inside their respective callback branches above. A user's own
     # user_data can only ever contain keys their own button taps set.
-    await react_random(update.message)
-
     if not await require_membership(update, context):
         return
     chat_id = update.effective_chat.id
@@ -956,7 +924,6 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 # Owner command: change the join-gate channel without a redeploy
 # ---------------------------------------------------------------------------
 async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await react_random(update.message)
     if not is_owner(update):
         await update.message.reply_text("This command is only available to the bot owner.")
         return
@@ -1011,6 +978,29 @@ async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _cached_invite_link = None
     _cached_invite_link_for = None
     await update.message.reply_text(f"✅ Join-gate channel updated to: {chat.title or new_channel_id}")
+
+
+async def self_ping(context: ContextTypes.DEFAULT_TYPE):
+    """
+    Runs every 10 minutes inside the bot's own process (via JobQueue),
+    well under Render's ~15-min free-tier spin-down threshold. Hitting
+    our own base URL generates the incoming HTTP traffic Render looks
+    for to keep the container from sleeping -- no separate cron job
+    needed. Only scheduled in webhook mode (see main()), since polling
+    mode has no public URL to ping.
+    """
+    if not SELF_PING_URL:
+        return
+    try:
+        req = urllib.request.Request(SELF_PING_URL, method="GET")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            logger.info(f"Self-ping OK, status {resp.status}")
+    except urllib.error.HTTPError as e:
+        # Any HTTP response (even 404) means the service answered --
+        # that's all that's needed to reset Render's idle timer.
+        logger.info(f"Self-ping got HTTP {e.code} (service is awake, this is fine)")
+    except Exception as e:
+        logger.warning(f"Self-ping failed: {e}")
 
 
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
@@ -1106,6 +1096,15 @@ def main():
         if not webhook_base.startswith(("http://", "https://")):
             webhook_base = f"https://{webhook_base}"
         full_webhook_url = f"{webhook_base}/{BOT_TOKEN}"
+
+        global SELF_PING_URL
+        SELF_PING_URL = webhook_base
+
+        # Self-ping every 10 minutes to prevent Render free-tier
+        # spin-down. first=60 gives the app a minute to finish starting
+        # up before the first ping fires.
+        application.job_queue.run_repeating(self_ping, interval=600, first=60)
+
         logger.info("Starting in webhook mode on port %s", PORT)
         logger.info("Registering webhook URL: %s", full_webhook_url)
         application.run_webhook(
