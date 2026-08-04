@@ -137,23 +137,17 @@ TYPE_ICONS = {
 # name is skipped (via hasattr below) instead of the bot crashing or trying
 # to send an emoji Telegram no longer recognizes.
 #
-# This is a hand-picked subset (not the full ReactionEmoji list) — the ones
-# that read as a warm, unambiguous "got it" for a bot acknowledging a
-# message: positive, generic, and not tied to any particular topic.
-_REACTION_EMOJI_NAMES = (
-    "THUMBS_UP",
-    "RED_HEART",
-    "FIRE",
-    "HUNDRED_POINTS",
-    "PARTY_POPPER",
-    "CLAPPING_HANDS",
-    "EYES",
-    "HANDSHAKE",
-    "STAR_STRUCK",
-    "HIGH_VOLTAGE",
-)
+# is_big=True (passed below in react_to_message) is what makes this the
+# big, fullscreen animated "burst" — the same effect you get from a
+# long-press reaction in the Telegram app — rather than the small static
+# reaction icon. The Bot API only lets us pick the emoji; the animation
+# itself is entirely client-side and can't be customized further. Kept to a
+# small, unambiguously celebratory set on purpose — the burst is a strong
+# visual, so a neutral/quiet emoji (e.g. EYES) would look mismatched next
+# to it.
+REACTION_EMOJI_NAMES = ("PARTY_POPPER", "FIRE", "RED_HEART", "THUMBS_UP")
 REACTION_EMOJIS = [
-    name for name in _REACTION_EMOJI_NAMES if hasattr(ReactionEmoji, name)
+    name for name in REACTION_EMOJI_NAMES if hasattr(ReactionEmoji, name)
 ]
 if not REACTION_EMOJIS:
     # Extremely defensive fallback in case every name above is somehow
@@ -168,7 +162,9 @@ if not REACTION_EMOJIS:
 
 
 async def react_to_message(context: ContextTypes.DEFAULT_TYPE, chat_id, message_id) -> None:
-    """Best-effort: set a single random reaction on a user's message.
+    """Best-effort: set a single random *big* animated reaction burst on a
+    user's message (is_big=True) — the fullscreen animation, not the small
+    static reaction icon.
 
     Never raises — a reaction is a nice-to-have, so a failure here (chat
     reactions disabled, message too old, transient API error, etc.) must
@@ -182,6 +178,7 @@ async def react_to_message(context: ContextTypes.DEFAULT_TYPE, chat_id, message_
             chat_id=chat_id,
             message_id=message_id,
             reaction=[ReactionTypeEmoji(emoji=emoji)],
+            is_big=True,
         )
     except TelegramError:
         logger.debug(

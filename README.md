@@ -83,8 +83,9 @@ You should see: `... - tgfilebot - INFO - Starting in polling mode`
 5. Send `/stats` — confirm it reports at least 1 indexed file.
 6. Send part of the filename you posted (e.g. `report` for
    `Q3_report.pdf`) — confirm you get a button with that file's name, and
-   that your message itself gets a random emoji reaction (👍❤️🔥, etc.)
-   from the bot.
+   that your message itself gets a big animated reaction burst (👍❤️🔥🎉)
+   from the bot — the same fullscreen animation as a long-press reaction,
+   not the small static reaction icon.
 7. Tap the button — confirm you get a preview card with type/size/date
    and a **Send file** button.
 8. Tap **Send file** — confirm you receive the actual file.
@@ -242,7 +243,7 @@ practice.
   `file_unique_id` (dedupe key), and upserts into the `files` collection.
 - `handle_search_text` — case-insensitive regex search against stored
   `name`/`caption`, returns results as inline buttons.
-- `react_to_message` — sets a random Telegram-native emoji reaction (👍❤️🔥💯🎉👏👀🤝🤩⚡, from `telegram.constants.ReactionEmoji`) on every DM a user sends, right after the membership gate in `handle_private_text`. This covers search queries, password attempts, and rename replies alike — anything a real user types. Telegram bots can only set *one* reaction per message and only from Telegram's fixed reaction-emoji list (arbitrary Unicode emoji get rejected), so this picks from a small curated pool of that list by name rather than hardcoding characters. It's wrapped so a failure here (chat reactions disabled by the user/chat, transient API error) is logged and silently skipped — it will never block or break the bot's actual reply.
+- `react_to_message` — sets a random *big* animated reaction burst (👍❤️🔥🎉, `is_big=True` — the same fullscreen animation as a long-press reaction in the Telegram app, not the small static reaction icon) on every DM a user sends, right after the membership gate in `handle_private_text`. This covers search queries, password attempts, and rename replies alike — anything a real user types. Telegram bots can only set *one* reaction per message and only from Telegram's fixed reaction-emoji list (arbitrary Unicode emoji get rejected), so this picks from a small curated, celebratory pool of that list by name rather than hardcoding characters. It's wrapped so a failure here (chat reactions disabled by the user/chat, transient API error) is logged and silently skipped — it will never block or break the bot's actual reply.
 - `handle_callback` — routes every button tap: viewing a preview card,
   paging through results, sending a file, renaming, deleting, or
   browsing/going back.
