@@ -122,7 +122,7 @@ TYPE_ICONS = {
     "video": "🎥",
     "photo": "🖼",
     "audio": "🎵",
-    "voice": "🎙",
+    "voice": "🎙️",
     "video_note": "⭕",
 }
 
@@ -347,14 +347,14 @@ def build_join_gate_keyboard(join_link):
 async def send_join_gate(context: ContextTypes.DEFAULT_TYPE, chat_id):
     join_link = await get_channel_join_link(context)
     text = (
-        "🔒 *Join our channel to use this bot.*\n\n"
-        "Tap *Join Channel* below, join, then tap *Start* to continue."
+        "🔒 *Join our channel to use this bot.* 🤝\n\n"
+        "👉 Tap *Join Channel* below, join, then tap *Start* ▶️ to continue. ✨"
     )
     keyboard = build_join_gate_keyboard(join_link) if join_link else None
     if not join_link:
         text += (
             "\n\n⚠️ Couldn't generate an invite link right now — ask the "
-            "admin to check that the bot is an admin of the channel."
+            "admin 🛠️ to check that the bot is an admin of the channel."
         )
     await context.bot.send_message(chat_id, text, parse_mode="Markdown", reply_markup=keyboard)
 
@@ -435,12 +435,12 @@ def format_preview_text(doc) -> str:
     lock_line = "\n🔒 *Password required to send*" if doc.get("pw_hash") else ""
 
     return (
-        f"{icon} *File details*\n\n"
-        f"*Type:* {doc['file_type'].replace('_', ' ').title()}\n"
-        f"*Size:* {size}\n"
-        f"*Added:* {date_str}"
+        f"{icon} *File details* 📋\n\n"
+        f"🏷️ *Type:* {doc['file_type'].replace('_', ' ').title()}\n"
+        f"📏 *Size:* {size}\n"
+        f"📅 *Added:* {date_str}"
         f"{lock_line}\n\n"
-        f"_powered by @z5met & @z5meta_"
+        f"_powered by @z5met & @z5meta_ ⚡️"
     )
 
 
@@ -517,16 +517,16 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ---------------------------------------------------------------------------
 def build_start_text(admin: bool) -> str:
     text = (
-        "👋 *File Search Bot*\n\n"
-        "*Send me the file name to search.*"
+        "👋 *File Search Bot* 🤖\n\n"
+        "🔎 *Send me the file name to search.* 📁"
     )
     if admin:
         text += (
-            "\n\nCommands:\n"
-            "• /browse — browse files by type\n"
-            "• /recent — last 10 uploads\n"
-            "• /stats — indexed file count\n"
-            "• /update — change the join-gate channel"
+            "\n\n🛠️ Commands:\n"
+            "• 📂 /browse — browse files by type\n"
+            "• 🕓 /recent — last 10 uploads\n"
+            "• 📊 /stats — indexed file count\n"
+            "• ⚙️ /update — change the join-gate channel"
         )
     return text
 
@@ -541,7 +541,7 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await require_membership(update, context):
         return
     if not is_owner(update):
-        await update.message.reply_text("This command is only available to the bot owner.")
+        await update.message.reply_text("🚫 This command is only available to the bot owner. 👑")
         return
     try:
         count = files_col.count_documents({})
@@ -549,10 +549,10 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except PyMongoError:
         logger.exception("stats_cmd: MongoDB query failed")
         await update.message.reply_text(
-            "⚠️ Couldn't reach the database just now — try /stats again in a moment."
+            "⚠️ Couldn't reach the database just now — try /stats again in a moment. 🙏"
         )
         return
-    lines = [f"*Total indexed:* {count}"]
+    lines = [f"📊 *Total indexed:* {count} 🎉"]
     for row in by_type:
         icon = TYPE_ICONS.get(row["_id"], "📎")
         lines.append(f"{icon} {row['_id'].title()}: {row['n']}")
@@ -563,16 +563,16 @@ async def browse_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await require_membership(update, context):
         return
     if not is_owner(update):
-        await update.message.reply_text("This command is only available to the bot owner.")
+        await update.message.reply_text("🚫 This command is only available to the bot owner. 👑")
         return
     rows = [
         [InlineKeyboardButton("📄 Documents", callback_data="browsetype:document")],
         [InlineKeyboardButton("🎥 Videos", callback_data="browsetype:video")],
-        [InlineKeyboardButton("🖼 Photos", callback_data="browsetype:photo")],
+        [InlineKeyboardButton("🖼️ Photos", callback_data="browsetype:photo")],
         [InlineKeyboardButton("🎵 Audio", callback_data="browsetype:audio")],
     ]
     await update.message.reply_text(
-        "📂 *Browse by type*", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows)
+        "📂 *Browse by type* 🗂️", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows)
     )
 
 
@@ -580,16 +580,16 @@ async def recent_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await require_membership(update, context):
         return
     if not is_owner(update):
-        await update.message.reply_text("This command is only available to the bot owner.")
+        await update.message.reply_text("🚫 This command is only available to the bot owner. 👑")
         return
     docs = list_recent(10)
     if not docs:
-        await update.message.reply_text("No files indexed yet.")
+        await update.message.reply_text("😕 No files indexed yet.")
         return
     tag = f"recent:{update.effective_chat.id}"
     _list_cache[(update.effective_chat.id, tag)] = docs
     await update.message.reply_text(
-        "🕓 *Recent uploads*",
+        "🕓 *Recent uploads* ✨",
         parse_mode="Markdown",
         reply_markup=build_results_keyboard(docs, 0, tag),
     )
@@ -618,7 +618,7 @@ async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 [[InlineKeyboardButton("📨 Request from admin", callback_data=f"reqadmin:{request_id}")]]
             )
         await update.message.reply_text(
-            f"🔍 No files found matching \"{query}\".",
+            f"🔍 No files found matching \"{query}\". 😕",
             reply_markup=keyboard,
         )
         return
@@ -627,7 +627,7 @@ async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
     _list_cache[(update.effective_chat.id, tag)] = results
 
     await update.message.reply_text(
-        f"🔍 *Found {len(results)} match(es) for* \"{escape_md(query)}\"",
+        f"🔍 *Found {len(results)} match(es) for* \"{escape_md(query)}\" 🎯",
         parse_mode="Markdown",
         reply_markup=build_results_keyboard(results, 0, tag),
     )
@@ -645,13 +645,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "checkjoin":
         user = update.effective_user
         if user is not None and await is_channel_member(context, user.id):
-            await query.answer("✅ Joined! Let's go.", show_alert=True)
+            await query.answer("✅ Joined! Let's go. 🚀", show_alert=True)
             await query.edit_message_text(
-                "✅ *You're in!*\n\n" + build_start_text(is_owner(update)), parse_mode="Markdown"
+                "✅ *You're in!* 🎉\n\n" + build_start_text(is_owner(update)), parse_mode="Markdown"
             )
         else:
             await query.answer(
-                "You haven't joined the channel yet — tap Join Channel, then tap Start again.",
+                "🚫 You haven't joined the channel yet — tap Join Channel, then tap Start again. 🔁",
                 show_alert=True,
             )
         return
@@ -679,7 +679,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         if req is None:
             await query.edit_message_reply_markup(reply_markup=None)
-            await context.bot.send_message(chat_id, "This request has expired — please search again.")
+            await context.bot.send_message(chat_id, "⏳ This request has expired — please search again. 🔁")
             return
         if not CHANNEL_ID:
             await context.bot.send_message(chat_id, "⚠️ No channel is configured to send requests to.")
@@ -688,9 +688,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await context.bot.send_message(
                 CHANNEL_ID,
-                f"📨 *File request*\n\n"
-                f"*Requested by:* {escape_md(requester_label)}\n"
-                f"*Looking for:* *{escape_md(req['query'])}*",
+                f"📨 *File request* 🙋\n\n"
+                f"👤 *Requested by:* {escape_md(requester_label)}\n"
+                f"🔎 *Looking for:* *{escape_md(req['query'])}*",
                 parse_mode="Markdown",
             )
         except Exception:
@@ -699,7 +699,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         _pending_requests.pop(request_id, None)
         await query.edit_message_text(
-            f"🔍 No files found matching \"{req['query']}\".\n\n✅ Request sent to the admin."
+            f"🔍 No files found matching \"{req['query']}\".\n\n✅ Request sent to the admin. 📬"
         )
         return
 
@@ -709,13 +709,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         docs = list_by_type(file_type)
         await query.answer()
         if not docs:
-            await query.edit_message_text(f"No {file_type}s indexed yet.")
+            await query.edit_message_text(f"😕 No {file_type}s indexed yet.")
             return
         tag = f"type:{file_type}:{chat_id}"
         _list_cache[(chat_id, tag)] = docs
         icon = TYPE_ICONS.get(file_type, "📎")
         await query.edit_message_text(
-            f"{icon} *{file_type.title()}s* ({len(docs)})",
+            f"{icon} *{file_type.title()}s* ({len(docs)}) ✅",
             parse_mode="Markdown",
             reply_markup=build_results_keyboard(docs, 0, tag),
         )
@@ -733,7 +733,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         docs = _list_cache.get((chat_id, tag))
         await query.answer()
         if docs is None:
-            await query.edit_message_text("This list expired — please search again.")
+            await query.edit_message_text("⏳ This list expired — please search again. 🔁")
             return
         await query.edit_message_reply_markup(reply_markup=build_results_keyboard(docs, page, tag))
         return
@@ -748,10 +748,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         docs = _list_cache.get((chat_id, tag))
         await query.answer()
         if docs is None:
-            await query.edit_message_text("This list expired — please search again.")
+            await query.edit_message_text("⏳ This list expired — please search again. 🔁")
             return
         await query.edit_message_text(
-            f"🔍 *Results* ({len(docs)})",
+            f"🔍 *Results* ({len(docs)}) 📋",
             parse_mode="Markdown",
             reply_markup=build_results_keyboard(docs, page, tag),
         )
@@ -767,7 +767,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         doc = _find_by_id(doc_id)
         await query.answer()
         if doc is None:
-            await query.edit_message_text("File not found (it may have been deleted).")
+            await query.edit_message_text("❌ File not found (it may have been deleted). 🗑️")
             return
         await query.edit_message_text(
             format_preview_text(doc),
@@ -782,52 +782,52 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         doc = _find_by_id(doc_id)
         if doc is None:
             await query.answer()
-            await context.bot.send_message(chat_id, "File not found (it may have been deleted).")
+            await context.bot.send_message(chat_id, "❌ File not found (it may have been deleted). 🗑️")
             return
         if doc.get("pw_hash"):
             await query.answer()
             context.user_data["awaiting_password_for"] = doc_id
             await context.bot.send_message(
                 chat_id,
-                f"🔒 *{escape_md(display_label(doc))}* is password-protected.\n"
-                f"Send the password to receive it:",
+                f"🔒 *{escape_md(display_label(doc))}* is password-protected. 🔐\n"
+                f"✍️ Send the password to receive it:",
                 parse_mode="Markdown",
             )
             return
-        await query.answer("Sending...")
+        await query.answer("📤 Sending...")
         await _send_stored_file(context, chat_id, doc)
         return
 
     # --- Delete (owner-only) ---
     if data.startswith("delete:"):
         if not is_owner(update):
-            await query.answer("Only the bot owner can delete files.", show_alert=True)
+            await query.answer("🚫 Only the bot owner can delete files.", show_alert=True)
             return
         doc_id = data.split(":", 1)[1]
         doc = _find_by_id(doc_id)
         if doc is None:
-            await query.answer("Already deleted.")
+            await query.answer("✅ Already deleted.")
             return
         files_col.delete_one({"_id": doc["_id"]})
-        await query.answer("Deleted.")
-        await query.edit_message_text(f"🗑 Deleted: {display_label(doc)}")
+        await query.answer("🗑️ Deleted.")
+        await query.edit_message_text(f"🗑️ Deleted: {display_label(doc)} ✅")
         return
 
     # --- Rename: ask for new name via a follow-up text message (owner-only) ---
     if data.startswith("rename:"):
         if not is_owner(update):
-            await query.answer("Only the bot owner can rename files.", show_alert=True)
+            await query.answer("🚫 Only the bot owner can rename files.", show_alert=True)
             return
         doc_id = data.split(":", 1)[1]
         doc = _find_by_id(doc_id)
         if doc is None:
-            await query.answer("File not found.")
+            await query.answer("❌ File not found.")
             return
         await query.answer()
         context.user_data["awaiting_rename_for"] = doc_id
         await context.bot.send_message(
             chat_id,
-            f"✏️ Send the new name for *{escape_md(display_label(doc))}*:",
+            f"✏️ Send the new name for *{escape_md(display_label(doc))}*: 📝",
             parse_mode="Markdown",
         )
         return
@@ -876,10 +876,10 @@ async def _send_stored_file(context, chat_id, doc):
         elif ftype == "video_note":
             sent_message = await context.bot.send_video_note(chat_id, file_id)
         elif ftype == "photo":
-            sent_message = await context.bot.send_photo(chat_id, file_id, caption=f"🖼 {label}")
+            sent_message = await context.bot.send_photo(chat_id, file_id, caption=f"🖼️ {label}")
     except Exception:
         logger.exception("Failed to resend file %s", doc.get("_id"))
-        await context.bot.send_message(chat_id, f"⚠️ Couldn't resend: {label}")
+        await context.bot.send_message(chat_id, f"⚠️ Couldn't resend: {label} 😕")
         return
 
     if sent_message is None or file_size <= LARGE_FILE_BYTES:
@@ -891,10 +891,10 @@ async def _send_stored_file(context, chat_id, doc):
     # on the recipient's device.
     warning_message = await context.bot.send_message(
         chat_id,
-        "⚠️ *This file is larger than 50MB.*\n"
-        "It will be automatically deleted from this chat in *5 minutes*.\n\n"
-        "Please forward it to another chat or save it elsewhere *before* "
-        "opening it.",
+        "⚠️ *This file is larger than 50MB.* 📦\n"
+        "⏳ It will be automatically deleted from this chat in *5 minutes*. ⏱️\n\n"
+        "❗ Please forward it to another chat or save it elsewhere *before* "
+        "opening it. 💾",
         parse_mode="Markdown",
     )
 
@@ -942,7 +942,7 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data.pop("awaiting_password_for", None)
             _password_attempts.pop(attempt_key, None)
             await update.message.reply_text(
-                "❌ Too many incorrect attempts. Tap Send file again to retry."
+                "❌ Too many incorrect attempts. 🚫 Tap Send file again to retry. 🔁"
             )
             return
 
@@ -951,21 +951,21 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         if doc is None:
             context.user_data.pop("awaiting_password_for", None)
             _password_attempts.pop(attempt_key, None)
-            await update.message.reply_text("That file no longer exists.")
+            await update.message.reply_text("😕 That file no longer exists.")
             return
 
         salt_hex, digest_hex = doc.get("pw_salt"), doc.get("pw_hash")
         if salt_hex and digest_hex and verify_password(submitted, salt_hex, digest_hex):
             context.user_data.pop("awaiting_password_for", None)
             _password_attempts.pop(attempt_key, None)
-            await update.message.reply_text("✅ Correct — sending...")
+            await update.message.reply_text("✅ Correct — sending... 📤")
             await _send_stored_file(context, chat_id, doc)
         else:
             _password_attempts[attempt_key] = attempts + 1
             remaining = MAX_PASSWORD_ATTEMPTS - _password_attempts[attempt_key]
             await update.message.reply_text(
-                f"❌ Incorrect password. {remaining} attempt(s) left."
-                if remaining > 0 else "❌ Incorrect password."
+                f"❌ Incorrect password. {remaining} attempt(s) left. 🔐"
+                if remaining > 0 else "❌ Incorrect password. 🔒"
             )
         return
 
@@ -975,10 +975,10 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
         doc = _find_by_id(pending_doc_id)
         context.user_data.pop("awaiting_rename_for", None)
         if doc is None:
-            await update.message.reply_text("That file no longer exists.")
+            await update.message.reply_text("😕 That file no longer exists.")
             return
         files_col.update_one({"_id": doc["_id"]}, {"$set": {"name": new_name}})
-        await update.message.reply_text(f"✅ Renamed to: {new_name}")
+        await update.message.reply_text(f"✅ Renamed to: {new_name} 🏷️")
         return
 
     await handle_search_text(update, context)
@@ -989,28 +989,28 @@ async def handle_private_text(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ---------------------------------------------------------------------------
 async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_owner(update):
-        await update.message.reply_text("This command is only available to the bot owner.")
+        await update.message.reply_text("🚫 This command is only available to the bot owner. 👑")
         return
 
     args = context.args
     usage = (
-        "Usage: `/update channel <channel_id>`\n"
-        "Example: `/update channel -1001234567890`"
+        "ℹ️ Usage: `/update channel <channel_id>`\n"
+        "💡 Example: `/update channel -1001234567890`"
     )
     if not args or args[0].lower() != "channel":
         await update.message.reply_text(usage, parse_mode="Markdown")
         return
     if len(args) < 2:
         await update.message.reply_text(
-            "Please include the new channel id.\n" + usage, parse_mode="Markdown"
+            "❗ Please include the new channel id.\n" + usage, parse_mode="Markdown"
         )
         return
 
     new_channel_id = args[1]
     if not (new_channel_id.lstrip("-").isdigit() or new_channel_id.startswith("@")):
         await update.message.reply_text(
-            "That doesn't look like a valid channel id. Use the numeric id "
-            "(e.g. `-1001234567890`) or `@username`.",
+            "❌ That doesn't look like a valid channel id. Use the numeric id "
+            "(e.g. `-1001234567890`) or `@username`. 🆔",
             parse_mode="Markdown",
         )
         return
@@ -1021,7 +1021,7 @@ async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         logger.exception("update_cmd: couldn't resolve channel %s", new_channel_id)
         await update.message.reply_text(
-            "⚠️ Couldn't find that channel — make sure the bot is an admin "
+            "⚠️ Couldn't find that channel — make sure the bot is an admin 🛠️ "
             "there and the id is correct."
         )
         return
@@ -1034,14 +1034,14 @@ async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except PyMongoError:
         logger.exception("update_cmd: failed to persist new join channel to MongoDB")
         await update.message.reply_text(
-            "⚠️ Couldn't save that to the database — try again in a moment."
+            "⚠️ Couldn't save that to the database — try again in a moment. ⏳"
         )
         return
 
     _join_channel_id = new_channel_id
     _cached_invite_link = None
     _cached_invite_link_for = None
-    await update.message.reply_text(f"✅ Join-gate channel updated to: {chat.title or new_channel_id}")
+    await update.message.reply_text(f"✅ Join-gate channel updated to: {chat.title or new_channel_id} 🎯")
 
 
 async def self_ping(context: ContextTypes.DEFAULT_TYPE):
@@ -1077,7 +1077,7 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
     if OWNER_ID and isinstance(update, Update) and update.effective_chat:
         try:
             await context.bot.send_message(
-                OWNER_ID, f"⚠️ Bot hit an error: {context.error!r}"
+                OWNER_ID, f"⚠️ Bot hit an error: {context.error!r} 🐛"
             )
         except Exception:
             pass  # never let error reporting itself crash the handler
