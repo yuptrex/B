@@ -82,7 +82,9 @@ You should see: `... - tgfilebot - INFO - Starting in polling mode`
 4. DM your bot `/start` — confirm it replies.
 5. Send `/stats` — confirm it reports at least 1 indexed file.
 6. Send part of the filename you posted (e.g. `report` for
-   `Q3_report.pdf`) — confirm you get a button with that file's name.
+   `Q3_report.pdf`) — confirm you get a button with that file's name, and
+   that your message itself gets a random emoji reaction (👍❤️🔥, etc.)
+   from the bot.
 7. Tap the button — confirm you get a preview card with type/size/date
    and a **Send file** button.
 8. Tap **Send file** — confirm you receive the actual file.
@@ -155,19 +157,33 @@ zero cost when idle instead of polling in the background.
    10000` followed by `Registering webhook URL: https://...` — this
    confirms the bot registered the webhook with Telegram successfully.
 
-**What to expect:** the free instance spins down after 15 minutes with
-no incoming traffic. The next message after that triggers a cold start —
-about 50 seconds — before you get a reply; after that it's instant again
-for 15 minutes. This is a one-time delay per idle gap, not a failure —
-the message isn't lost, it's just waiting for the instance to wake up.
+**What to expect:** with self-ping active (see below), the bot pings
+itself every 10 minutes — well under Render's 15-minute idle threshold —
+so under normal conditions it never spins down, and you shouldn't see
+the ~50 second cold-start delay at all. The old spin-down/cold-start
+behavior only resurfaces if self-ping stops working (e.g. the instance
+itself crashed and restarted mid-cycle, or an outbound network hiccup
+made a ping fail) — in that edge case, the next message after 15+ idle
+minutes would trigger one cold start before self-ping picks back up.
+
+**Built-in self-ping:** in webhook mode, `bot.py` pings its own
+`WEBHOOK_URL` every 10 minutes from inside the running process (via
+`python-telegram-bot`'s `JobQueue` — see `self_ping()`), which resets
+Render's idle timer and is what keeps the free instance from spinning
+down. No separate cron job or paid plan needed. This only runs in
+webhook mode; it's skipped automatically if the bot falls back to
+polling mode (no `WEBHOOK_URL`/`RENDER_EXTERNAL_URL` set). You can
+confirm it's working by checking the **Logs** tab every ~10 minutes for
+`Self-ping OK, status 200` entries.
 
 **Known edge case worth knowing about, not acting on:** Telegram waits
 up to 60 seconds for your webhook to return `200 OK` before it retries
-delivery. Render's ~50 second cold start is close enough to that limit
-that on rare occasions, a slow wake-up could cross 60 seconds and cause
-Telegram to redeliver the same update. `bot.py` doesn't currently
-deduplicate by `update_id`, so a redelivered update would be processed
-twice (e.g. a search running twice). For a personal low-traffic bot this
+delivery. In the rare case where self-ping has failed and a cold start
+does occur, Render's ~50 second wake time is close enough to that limit
+that a slow wake-up could cross 60 seconds and cause Telegram to
+redeliver the same update. `bot.py` doesn't currently deduplicate by
+`update_id`, so a redelivered update would be processed twice (e.g. a
+search running twice). For a personal low-traffic bot this
 is a minor, rare inconvenience rather than a real problem — worth adding
 `update_id` deduplication only if it actually starts happening in
 practice.
@@ -226,6 +242,7 @@ practice.
   `file_unique_id` (dedupe key), and upserts into the `files` collection.
 - `handle_search_text` — case-insensitive regex search against stored
   `name`/`caption`, returns results as inline buttons.
+- `react_to_message` — sets a random Telegram-native emoji reaction (👍❤️🔥💯🎉👏👀🤝🤩⚡, from `telegram.constants.ReactionEmoji`) on every DM a user sends, right after the membership gate in `handle_private_text`. This covers search queries, password attempts, and rename replies alike — anything a real user types. Telegram bots can only set *one* reaction per message and only from Telegram's fixed reaction-emoji list (arbitrary Unicode emoji get rejected), so this picks from a small curated pool of that list by name rather than hardcoding characters. It's wrapped so a failure here (chat reactions disabled by the user/chat, transient API error) is logged and silently skipped — it will never block or break the bot's actual reply.
 - `handle_callback` — routes every button tap: viewing a preview card,
   paging through results, sending a file, renaming, deleting, or
   browsing/going back.
