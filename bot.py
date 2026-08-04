@@ -481,21 +481,11 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     # Big animated reaction burst on the user's /start message — is_big=True
     # is what triggers the fullscreen animation on their screen.
-    #
-    # Each chat has its own admin-configurable list of allowed reaction
-    # emoji (Chat settings -> Reactions); Telegram rejects any emoji not on
-    # that list with 400 REACTION_INVALID. If the random pick gets
-    # rejected, retry once with "👍" — it's on by default in virtually
-    # every chat's allowed-reactions list — before giving up quietly.
     try:
         emoji = random.choice(START_REACTION_EMOJIS)
         await update.message.set_reaction(reaction=emoji, is_big=True)
-    except Exception as e:
-        logger.warning("Reaction '%s' rejected (%s); retrying with fallback 👍", emoji, e)
-        try:
-            await update.message.set_reaction(reaction="👍", is_big=True)
-        except Exception as e2:
-            logger.warning("Failed to set reaction on /start message: %s", e2)
+    except Exception:
+        logger.exception("Failed to set reaction on /start message")
     await update.message.reply_text(build_start_text(is_owner(update)), parse_mode="Markdown")
 
 
