@@ -21,6 +21,7 @@ import hmac
 import logging
 import math
 import os
+import random
 import re
 import secrets
 import urllib.request
@@ -72,6 +73,12 @@ PAGE_SIZE = 8  # results per page in lists
 
 LARGE_FILE_BYTES = 50 * 1024 * 1024  # 50 MB
 AUTO_DELETE_SECONDS = 5 * 60  # 5 minutes
+
+# Emoji reactions known to trigger Telegram's big animated "burst" effect
+# on the sender's screen when set with is_big=True — same visual you get
+# from a long-press reaction in the app. The Bot API only lets us pick the
+# emoji; the animation itself is entirely client-side and can't be customized.
+START_REACTION_EMOJIS = ["🎉", "🔥", "❤️", "👍"]
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -472,6 +479,13 @@ def build_start_text(admin: bool) -> str:
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await require_membership(update, context):
         return
+    # Big animated reaction burst on the user's /start message — is_big=True
+    # is what triggers the fullscreen animation on their screen.
+    try:
+        emoji = random.choice(START_REACTION_EMOJIS)
+        await update.message.set_reaction(reaction=emoji, is_big=True)
+    except Exception:
+        logger.exception("Failed to set reaction on /start message")
     await update.message.reply_text(build_start_text(is_owner(update)), parse_mode="Markdown")
 
 
